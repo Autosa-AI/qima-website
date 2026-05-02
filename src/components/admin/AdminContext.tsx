@@ -71,38 +71,54 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   );
 
   useEffect(() => {
+    async function fetchMe(storedToken: string | null): Promise<AdminUser | null> {
+      const res = await fetch("/api/auth/me", {
+        headers: storedToken ? { Authorization: `Bearer ${storedToken}` } : {},
+      });
+      if (res.status === 401 || res.status === 403) throw new Error("Not authenticated");
+      if (!res.ok) throw new Error("Server error");
+      const data = await res.json();
+      if (!data.success || !data.data) throw new Error("Not authenticated");
+      return data.data as AdminUser;
+    }
+
     async function hydrate() {
-      try {
-        const storedToken =
-          typeof window !== "undefined"
-            ? localStorage.getItem("qima_admin_token")
-            : null;
-        setToken(storedToken);
+      const storedToken =
+        typeof window !== "undefined"
+          ? localStorage.getItem("qima_admin_token")
+          : null;
+      setToken(storedToken);
 
-        const res = await fetch("/api/auth/me", {
-          headers: storedToken
-            ? { Authorization: `Bearer ${storedToken}` }
-            : {},
-        });
+      // Try up to 3 times to handle cold-start DB timeouts on first deploy
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const adminUser = await fetchMe(storedToken);
+          setAdmin(adminUser);
+          setLoading(false);
+          return;
+        } catch (err: unknown) {
+          const isAuthError =
+            err instanceof Error && err.message === "Not authenticated";
 
-        if (!res.ok) {
-          throw new Error("Not authenticated");
-        }
+          if (isAuthError) {
+            // Genuine 401 — clear session and redirect to login
+            if (typeof window !== "undefined") {
+              localStorage.removeItem("qima_admin_token");
+            }
+            router.replace("/admin");
+            setLoading(false);
+            return;
+          }
 
-        const data = await res.json();
-        if (data.success && data.data) {
-          setAdmin(data.data as AdminUser);
-        } else {
-          throw new Error("Invalid response");
+          // Server error (5xx / cold start) — wait and retry
+          if (attempt < 3) {
+            await new Promise((r) => setTimeout(r, attempt * 1000));
+          }
         }
-      } catch {
-        if (typeof window !== "undefined") {
-          localStorage.removeItem("qima_admin_token");
-        }
-        router.replace("/admin");
-      } finally {
-        setLoading(false);
       }
+
+      // All retries exhausted — stay on page, admin stays null
+      setLoading(false);
     }
 
     hydrate();

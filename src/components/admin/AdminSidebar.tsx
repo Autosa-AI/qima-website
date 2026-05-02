@@ -33,7 +33,7 @@ const navItems: NavItem[] = [
 
 export default function AdminSidebar() {
   const pathname = usePathname();
-  const { admin, logout } = useAdmin();
+  const { admin, loading, logout } = useAdmin();
 
   return (
     <aside className="fixed left-0 top-0 h-screen w-60 bg-[#111111] border-r border-white/[0.06] flex flex-col z-40">
@@ -53,7 +53,8 @@ export default function AdminSidebar() {
       {/* Nav */}
       <nav className="flex-1 px-3 py-4 space-y-0.5 overflow-y-auto">
         {navItems.map((item) => {
-          if (item.ownerOnly && admin?.role !== "owner") return null;
+          // Hide owner-only items while loading or if not an owner
+          if (item.ownerOnly && (loading || admin?.role !== "owner")) return null;
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
 

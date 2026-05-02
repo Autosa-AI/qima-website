@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getAdminFromRequest } from "@/lib/auth";
+import { getAdminFromRequest, hashPassword } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
 import { logAction } from "@/lib/auditLog";
 import { ObjectId } from "mongodb";
@@ -70,6 +70,9 @@ export async function PATCH(
     }
     if (typeof body.isActive === "boolean") {
       updates.isActive = body.isActive;
+    }
+    if (typeof body.password === "string" && body.password.length >= 8) {
+      updates.passwordHash = await hashPassword(body.password);
     }
 
     await db
@@ -142,13 +145,8 @@ export async function DELETE(
       );
     }
 
-    // Soft delete
-    await db
-      .collection<Admin>("admins")
-      .updateOne(
-        { _id: targetId },
-        { $set: { isActive: false, updatedAt: new Date() } }
-      );
+    // Hard delete
+    await db.collection<Admin>("admins").deleteOne({ _id: targetId });
 
     await logAction({
       adminId: payload.sub,
@@ -156,7 +154,7 @@ export async function DELETE(
       action: "delete",
       collection: "admins",
       documentId: targetId,
-      details: `Soft-deleted admin: ${existing.email}`,
+      details: `Permanently deleted admin: ${existing.email}`,
     });
 
     return NextResponse.json({ success: true }, { status: 200 });

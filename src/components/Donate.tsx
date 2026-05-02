@@ -212,7 +212,62 @@ export default function Donate() {
             {t("donate_badge")}
           </div>
           <h2 className="text-3xl md:text-5xl font-bold text-white mb-3">{t("donate_title")}</h2>
-          <p className={`text-white/45 max-w-xl mx-auto text-sm leading-relaxed ${isRTL ? "font-arabic" : ""}`}>{t("donate_desc")}</p>
+          <p className={`text-white/45 max-w-xl mx-auto text-sm leading-relaxed mb-8 ${isRTL ? "font-arabic" : ""}`}>{t("donate_desc")}</p>
+
+          {/* ── Creative "full cases" CTA ── */}
+          <motion.a
+            href="/donate"
+            initial={{ opacity: 0, y: 12 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
+            transition={{ duration: 0.7, delay: 0.15 }}
+            whileHover="hover"
+            className="group inline-flex items-center justify-center mx-auto relative overflow-hidden"
+          >
+            {/* Outer glow ring */}
+            <motion.span
+              variants={{ hover: { scale: 1.08, opacity: 1 } }}
+              initial={{ scale: 1, opacity: 0.4 }}
+              className="absolute inset-0 rounded-2xl border border-gold/30 blur-sm"
+              style={{ background: "radial-gradient(ellipse at center, rgba(201,168,76,0.12) 0%, transparent 70%)" }}
+            />
+
+            {/* Card */}
+            <span className={`relative flex items-center gap-4 px-7 py-4 rounded-2xl border border-gold/20 bg-black transition-all duration-300 group-hover:border-gold/50 group-hover:bg-gold/[0.05] ${isRTL ? "flex-row-reverse font-arabic" : ""}`}>
+              {/* Mini progress preview */}
+              <span className="flex-shrink-0 flex flex-col gap-1.5 w-14 opacity-70 group-hover:opacity-100 transition-opacity">
+                {[70, 42, 88].map((w, i) => (
+                  <span key={i} className="h-1 rounded-full bg-white/10 overflow-hidden">
+                    <motion.span
+                      className="block h-full rounded-full bg-gold"
+                      initial={{ width: 0 }}
+                      animate={inView ? { width: `${w}%` } : { width: 0 }}
+                      transition={{ duration: 1.2, delay: 0.4 + i * 0.15, ease: "easeOut" }}
+                    />
+                  </span>
+                ))}
+              </span>
+
+              {/* Text */}
+              <span className="flex flex-col items-start gap-0.5">
+                <span className="text-white font-bold text-sm leading-tight">
+                  {isRTL ? "عرض جميع الحالات" : "Browse all cases"}
+                </span>
+                <span className="text-white/40 text-xs">
+                  {isRTL ? "مع تفاصيل التقدم الكامل" : "with full progress details"}
+                </span>
+              </span>
+
+              {/* Arrow */}
+              <motion.span
+                variants={{ hover: { x: isRTL ? -4 : 4 } }}
+                className="flex-shrink-0 text-gold/60 group-hover:text-gold transition-colors"
+              >
+                <svg width="18" height="18" viewBox="0 0 18 18" fill="none" className={isRTL ? "rotate-180" : ""}>
+                  <path d="M3 9h12M10 4l5 5-5 5" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </motion.span>
+            </span>
+          </motion.a>
         </motion.div>
 
         <div className="grid lg:grid-cols-[1fr_360px] gap-8 items-start">

@@ -98,7 +98,11 @@ async function buildCanvas(
   canvas.height = H;
   const ctx = canvas.getContext("2d")!;
 
-  const PAD = 40;  // horizontal page padding
+  const PAD = 40;
+  // Scale fonts and spacing down as case count grows
+  const n      = selected.length;
+  const scale  = n <= 2 ? 1 : n <= 3 ? 0.88 : n <= 4 ? 0.78 : n <= 5 ? 0.70 : 0.62;
+  const sc = (v: number) => Math.round(v * scale);
 
   /* ── Background ─────────────────────────────────────────────────────── */
   ctx.fillStyle = "#0a0a0a";
@@ -111,23 +115,23 @@ async function buildCanvas(
     }
 
   /* ── Logo ────────────────────────────────────────────────────────────── */
-  const logoW = isStory ? 260 : 200;
-  let headerBottom = PAD + 20;
+  const logoW = sc(isStory ? 240 : 180);
+  let headerBottom = PAD + sc(16);
   try {
     const logo = await loadImg("/logo.png");
     const logoH = (logo.height / logo.width) * logoW;
     ctx.drawImage(logo, (W - logoW) / 2, headerBottom, logoW, logoH);
-    headerBottom += logoH + 28;
+    headerBottom += logoH + sc(20);
   } catch {
-    headerBottom = drawText(ctx, "قيمة", W / 2, headerBottom, 64, "900", "Cairo, Arial", "#C9A84C", "center", "rtl", 20);
+    headerBottom = drawText(ctx, "قيمة", W / 2, headerBottom, sc(56), "900", "Cairo, Arial", "#C9A84C", "center", "rtl", sc(16));
   }
 
   /* ── Slogan ──────────────────────────────────────────────────────────── */
-  const sloganSize = isStory ? 38 : 30;
-  const subSize    = isStory ? 24 : 20;
-  headerBottom = drawText(ctx, "لأن للمساكين حقًا… جاءت قيمة", W / 2, headerBottom, sloganSize, "700", "Cairo, Arial", "#C9A84C", "center", "rtl", 10);
+  const sloganSize = sc(isStory ? 36 : 28);
+  const subSize    = sc(isStory ? 22 : 18);
+  headerBottom = drawText(ctx, "لأن للمساكين حقًا… جاءت قيمة", W / 2, headerBottom, sloganSize, "700", "Cairo, Arial", "#C9A84C", "center", "rtl", sc(8));
   headerBottom = drawText(ctx, "تبرع الآن وكن جزءًا من التغيير",  W / 2, headerBottom, subSize,   "400", "Cairo, Arial", "rgba(255,255,255,0.4)", "center", "rtl", 0);
-  headerBottom += 24;
+  headerBottom += sc(20);
 
   /* ── Gold divider ────────────────────────────────────────────────────── */
   ctx.strokeStyle = "rgba(201,168,76,0.45)";
@@ -141,15 +145,12 @@ async function buildCanvas(
   headerBottom += 28;
 
   /* ── Cases ───────────────────────────────────────────────────────────── */
-  const FOOTER_H  = 110;
-  const CARD_GAP  = 14;
+  const FOOTER_H  = sc(100);
+  const CARD_GAP  = sc(12);
   const availH    = H - headerBottom - FOOTER_H;
   const count     = Math.max(1, selected.length);
-  // Fixed content height per card (sum of all elements inside)
-  const CONTENT_H = isStory ? 190 : 160;
-  const CARD_PAD  = isStory ? 28 : 22;  // top + bottom internal padding
-  const minCardH  = CONTENT_H + CARD_PAD * 2;
-  const cardH     = Math.max(minCardH, Math.floor((availH - (count - 1) * CARD_GAP) / count));
+  const CARD_PAD  = sc(isStory ? 24 : 18);
+  const cardH     = Math.max(sc(140), Math.floor((availH - (count - 1) * CARD_GAP) / count));
 
   const ACCENTS = ["#4F8EF7","#C9A84C","#34D399","#A78BFA","#F97316","#EC4899"];
 
@@ -184,7 +185,7 @@ async function buildCanvas(
     let ty = cy + CARD_PAD;
 
     // ① Case number (LTR, left side)
-    const numSize = isStory ? 20 : 17;
+    const numSize = sc(isStory ? 20 : 17);
     ctx.save();
     ctx.fillStyle = `${ac}`;
     ctx.font      = `700 ${numSize}px Urbanist, Arial`;
@@ -206,7 +207,7 @@ async function buildCanvas(
     ty += numSize + 12;
 
     // ② Case name (Arabic, RTL — right-aligned)
-    const nameSize = isStory ? 34 : 28;
+    const nameSize = sc(isStory ? 32 : 26);
     // Truncate name if too long for canvas
     ctx.save();
     ctx.font = `700 ${nameSize}px Cairo, Arial`;
@@ -217,7 +218,7 @@ async function buildCanvas(
     ty = drawText(ctx, name, innerR, ty, nameSize, "700", "Cairo, Arial", "#FFFFFF", "right", "rtl", 8);
 
     // ③ Brief (Arabic, RTL)
-    const briefSize = isStory ? 22 : 18;
+    const briefSize = sc(isStory ? 20 : 17);
     ctx.save();
     ctx.font = `400 ${briefSize}px Cairo, Arial`;
     ctx.direction = "ltr";
@@ -229,7 +230,7 @@ async function buildCanvas(
     // ④ Progress bar
     const barX = innerL;
     const barW = innerW;
-    const barH = isStory ? 12 : 10;
+    const barH = sc(isStory ? 12 : 10);
     const p    = safePct(c.raisedAmount, c.targetAmount);
 
     // Track background
@@ -250,7 +251,7 @@ async function buildCanvas(
     ty += barH + 10;
 
     // ⑤ Progress numbers
-    const progSize = isStory ? 20 : 16;
+    const progSize = sc(isStory ? 18 : 15);
     if (c.targetAmount && c.targetAmount > 0) {
       // Percentage badge — left
       const pctTxt = `${p}%`;
@@ -274,14 +275,14 @@ async function buildCanvas(
   }
 
   /* ── Footer ──────────────────────────────────────────────────────────── */
-  const ftY = H - FOOTER_H + 12;
+  const ftY = H - FOOTER_H + sc(10);
   ctx.strokeStyle = "rgba(201,168,76,0.25)";
   ctx.lineWidth   = 1;
   ctx.beginPath(); ctx.moveTo(PAD + 20, ftY); ctx.lineTo(W - PAD - 20, ftY); ctx.stroke();
 
-  const ftSize = isStory ? 24 : 20;
-  drawText(ctx, "تبرع عبر واتساب  ·  +201039091390", W / 2, ftY + 14, ftSize, "400", "Cairo, Arial", "rgba(255,255,255,0.4)", "center", "rtl", 8);
-  drawText(ctx, "qima-egypt.vercel.app  ·  قيمة", W / 2, ftY + 14 + ftSize + 14, ftSize - 4, "700", "Cairo, Arial", "rgba(201,168,76,0.55)", "center", "ltr", 0);
+  const ftSize = sc(isStory ? 22 : 18);
+  drawText(ctx, "تبرع عبر واتساب  ·  +201039091390", W / 2, ftY + sc(12), ftSize, "400", "Cairo, Arial", "rgba(255,255,255,0.4)", "center", "rtl", sc(6));
+  drawText(ctx, "qima-egypt.vercel.app  ·  قيمة", W / 2, ftY + sc(12) + ftSize + sc(10), ftSize - sc(3), "700", "Cairo, Arial", "rgba(201,168,76,0.55)", "center", "ltr", 0);
 
   return canvas;
 }

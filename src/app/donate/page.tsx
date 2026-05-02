@@ -174,25 +174,35 @@ function CaseCard({
 export default function DonatePage() {
   const { isRTL, t } = useLang();
 
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading]       = useState(true);
-  const [activeCat, setActiveCat]   = useState("all");
+  const [categories, setCategories]     = useState<Category[]>([]);
+  const [loading, setLoading]           = useState(true);
+  const [activeCat, setActiveCat]       = useState("all");
+  const [page, setPage]                 = useState(1);
   const [selectedCase, setSelectedCase] = useState<Case | null>(null);
   const [selectedAmount, setSelectedAmount] = useState("200");
   const [customAmount, setCustomAmount]     = useState("");
   const [caseInput, setCaseInput]           = useState("");
   const [inputError, setInputError]         = useState(false);
 
-  const formRef = useRef<HTMLDivElement>(null);
+  const PER_PAGE = 4;
+  const formRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     trackEvent("page_view", { page: "donate" });
+    // Read ?cat= URL param to pre-select category
+    const params = new URLSearchParams(window.location.search);
+    const cat    = params.get("cat");
+    if (cat) setActiveCat(cat);
+
     fetch("/api/categories")
       .then(r => r.json())
       .then(d => { if (d.success) setCategories(d.data ?? []); })
       .catch(() => {})
       .finally(() => setLoading(false));
   }, []);
+
+  // Reset to page 1 when category changes
+  useEffect(() => { setPage(1); }, [activeCat]);
 
   // All cases flat list
   const allCases = categories.flatMap(cat =>
@@ -202,9 +212,9 @@ export default function DonatePage() {
   const caseIndex: Record<string, Case> = {};
   allCases.forEach(c => { caseIndex[c.number] = c; });
 
-  const filtered = activeCat === "all"
-    ? allCases
-    : categories.find(c => c.slug === activeCat)?.cases ?? [];
+  const filtered   = (activeCat === "all" ? allCases : (categories.find(c => c.slug === activeCat)?.cases ?? [])).filter(c => c.isActive);
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PER_PAGE));
+  const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   function handleSelect(c: Case) {
     setSelectedCase(c);
@@ -316,38 +326,83 @@ export default function DonatePage() {
 
         {/* ── Cases grid ────────────────────────────────────────────────── */}
         {loading ? (
-          <div className="grid md:grid-cols-2 gap-5 mb-16">
+          <div className="grid md:grid-cols-2 gap-5 mb-8">
             {[1,2,3,4].map(i => (
               <div key={i} className="h-52 rounded-3xl bg-white/[0.02] border border-white/[0.05] animate-pulse" />
             ))}
           </div>
         ) : (
-          <AnimatePresence mode="wait">
-            <motion.div
-              key={activeCat}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.25 }}
-              className="grid md:grid-cols-2 gap-5 mb-16"
-            >
-              {filtered.filter(c => c.isActive).map((c, i) => (
-                <CaseCard
-                  key={c._id ?? c.number}
-                  c={c}
-                  accent={ACCENT[i % ACCENT.length]}
-                  isRTL={isRTL}
-                  isSelected={selectedCase?.number === c.number}
-                  onSelect={handleSelect}
-                />
-              ))}
-              {filtered.filter(c => c.isActive).length === 0 && (
-                <p className={`col-span-2 text-center text-white/20 py-12 ${isRTL ? "font-arabic" : ""}`}>
-                  {isRTL ? "لا توجد حالات في هذا التصنيف" : "No cases in this category"}
-                </p>
-              )}
-            </motion.div>
-          </AnimatePresence>
+          <>
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={`${activeCat}-${page}`}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.25 }}
+                className="grid md:grid-cols-2 gap-5 mb-6"
+              >
+                {paginated.map((c, i) => (
+                  <CaseCard
+                    key={c._id ?? c.number}
+                    c={c}
+                    accent={ACCENT[((page - 1) * PER_PAGE + i) % ACCENT.length]}
+                    isRTL={isRTL}
+                    isSelected={selectedCase?.number === c.number}
+                    onSelect={handleSelect}
+                  />
+                ))}
+                {paginated.length === 0 && (
+                  <p className={`col-span-2 text-center text-white/20 py-12 ${isRTL ? "font-arabic" : ""}`}>
+                    {isRTL ? "لا توجد حالات في هذا التصنيف" : "No cases in this category"}
+                  </p>
+                )}
+              </motion.div>
+            </AnimatePresence>
+
+            {/* Pagination */}
+            {totalPages > 1 && (
+              <div className={`flex items-center justify-center gap-3 mb-16 ${isRTL ? "flex-row-reverse font-arabic" : ""}`}>
+                <button
+                  onClick={() => setPage(p => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/25 disabled:opacity-25 transition-all"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={isRTL ? "" : "rotate-180"}>
+                    <path d="M10 4L6 8l4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                </button>
+
+                <div className="flex items-center gap-1.5">
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+                    <button key={p} onClick={() => setPage(p)}
+                      className={`w-8 h-8 rounded-lg text-sm font-semibold transition-all ${
+                        p === page
+                          ? "bg-gold text-black"
+                          : "text-white/40 hover:text-white hover:bg-white/5"
+                      }`}>
+                      {p}
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  className="w-9 h-9 rounded-xl border border-white/10 flex items-center justify-center text-white/40 hover:text-white hover:border-white/25 disabled:opacity-25 transition-all"
+                >
+                  <svg width="16" height="16" viewBox="0 0 16 16" fill="none" className={isRTL ? "rotate-180" : ""}>
+                    <path d="M6 4l4 4-4 4" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round"/>
+                  </svg>
+                </button>
+
+                <span className="text-white/25 text-xs ml-1">
+                  {isRTL ? `${filtered.length} حالة` : `${filtered.length} cases`}
+                </span>
+              </div>
+            )}
+            {totalPages <= 1 && <div className="mb-16" />}
+          </>
         )}
 
         {/* ── Donation form ─────────────────────────────────────────────── */}

@@ -2,7 +2,14 @@
 import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { useLang } from "@/context/LanguageContext";
-import { Shield, ChevronDown, Search, Check, X } from "lucide-react";
+import { Shield, ChevronDown, Search, Check, X, CalendarDays, HeartHandshake, Users, Zap } from "lucide-react";
+
+// Map category slugs to lucide icons — avoids emoji rendering issues
+const CATEGORY_ICONS: Record<string, React.ReactNode> = {
+  monthly:  <CalendarDays  size={14} />,
+  gaza:     <HeartHandshake size={14} />,
+  orphans:  <Users          size={14} />,
+};
 
 interface Case {
   number: string;
@@ -35,8 +42,8 @@ interface ApiCategory {
 const FALLBACK_CATEGORIES: Category[] = [
   {
     id: "monthly",
-    ar: { label: "شهريات", icon: "📋" },
-    en: { label: "Monthly Support", icon: "📋" },
+    ar: { label: "شهريات", icon: "" },
+    en: { label: "Monthly Support", icon: "" },
     cases: [
       { number: "001", ar: { name: "أحمد عبد الرحمن", brief: "عامل مصنع · ٣ أطفال", need: "٤٠٠ جنيه / شهر", story: "أحمد يعمل في مصنع نسيج بأجر يومي غير منتظم. زوجته مريضة وتحتاج دواءً شهرياً. أطفاله الثلاثة في المرحلة الابتدائية. راتبه في أفضل الأشهر لا يكفي الإيجار والمأكل معاً. يصمت على ضائقته ولا يُخبر أحداً." }, en: { name: "Ahmed Abdel Rahman", brief: "Factory worker · 3 children", need: "EGP 400 / month", story: "Ahmed works in a textile factory on irregular daily wages. His wife is ill and needs monthly medication. His three children are in primary school. Even in his best months his income barely covers rent and food. He suffers in silence and tells no one." } },
       { number: "002", ar: { name: "أم عادل سيد", brief: "أرملة · ٤ أطفال", need: "٦٠٠ جنيه / شهر", story: "فقدت زوجها قبل عامين في حادث عمل. لا تعليم لها يؤهلها لوظيفة. تبيع الخضار أمام البيت. أصغر أطفالها في الثالثة من عمره. تخشى أن يضطر أكبر أبنائها لترك المدرسة ليعمل." }, en: { name: "Um Adel Sayed", brief: "Widow · 4 children", need: "EGP 600 / month", story: "She lost her husband two years ago in a work accident. She has no qualifications. She sells vegetables outside her home for little profit. Her youngest is three. She fears her eldest son will have to drop out of school and work." } },
@@ -45,8 +52,8 @@ const FALLBACK_CATEGORIES: Category[] = [
   },
   {
     id: "gaza",
-    ar: { label: "أسر غزة", icon: "🕊️" },
-    en: { label: "Gaza Families", icon: "🕊️" },
+    ar: { label: "أسر غزة", icon: "" },
+    en: { label: "Gaza Families", icon: "" },
     cases: [
       { number: "004", ar: { name: "عائلة أبو طه", brief: "نازحون · ٦ أفراد", need: "٨٠٠ جنيه / شهر", story: "نزحت العائلة من شمال غزة وتعيش في شقة مستأجرة بالقاهرة. الأب مهندس لكنه لا يملك إقامة تمكنه من العمل رسمياً. الأم تعتني بأربعة أطفال وتحاول تعليمهم في البيت. مدخراتهم شارفت على النفاد." }, en: { name: "Abu Taha Family", brief: "Displaced · 6 members", need: "EGP 800 / month", story: "The family fled northern Gaza and rents a flat in Cairo. The father is an engineer but has no residency to work formally. The mother cares for four children and tries to teach them at home. Their savings are nearly exhausted." } },
       { number: "005", ar: { name: "أم سعيد الحلبي", brief: "أرملة غزاوية · ٥ أطفال", need: "٧٠٠ جنيه / شهر", story: "فقدت زوجها في القصف. وصلت مصر مع أطفالها الخمسة بملابس السفر فقط. أكبرهم ١٤ عاماً وأصغرهم رضيع. تعيش في غرفة واحدة مع جارة تستضيفها بلا مقابل." }, en: { name: "Um Saeed Al-Halabi", brief: "Gazan widow · 5 children", need: "EGP 700 / month", story: "She lost her husband in the bombing. She arrived in Egypt with her five children in travel clothes only. Her eldest is 14 and youngest is an infant. She shares one room with a neighbour who hosts her for free." } },
@@ -55,8 +62,8 @@ const FALLBACK_CATEGORIES: Category[] = [
   },
   {
     id: "orphans",
-    ar: { label: "أيتام وأرامل", icon: "🤲" },
-    en: { label: "Orphans & Widows", icon: "🤲" },
+    ar: { label: "أيتام وأرامل", icon: "" },
+    en: { label: "Orphans & Widows", icon: "" },
     cases: [
       { number: "007", ar: { name: "أحمد · يتيم", brief: "١٢ عامًا · كفيل وحيد لأمه", need: "٣٥٠ جنيه / شهر", story: "فقد أحمد والده وهو في التاسعة. أمه مريضة بالكلى ولا تستطيع العمل. يبيع بعد المدرسة علكة وعصائر في الشارع. حلمه أن يصبح طبيباً. قيمة تتكفل بمصاريفه الدراسية وجزء من المعيشة." }, en: { name: "Ahmed · Orphan", brief: "Age 12 · sole support for his mother", need: "EGP 350 / month", story: "Ahmed lost his father at age nine. His mother has kidney disease and cannot work. After school he sells gum and juice on the street. His dream is to become a doctor. Qima covers his school costs and part of living expenses." } },
       { number: "008", ar: { name: "أم أيمن طاهر", brief: "أرملة · ٣ أطفال صغار", need: "٦٥٠ جنيه / شهر", story: "توفي زوجها فجأة بجلطة قبل ثمانية أشهر. لم يترك شيئاً. أطفالها الثلاثة بين سنتين وسبع سنوات. تعمل في تنظيف بيوت ٤ أيام في الأسبوع. تترك الأطفال عند جارة عجوز وتخرج للعمل." }, en: { name: "Um Ayman Taher", brief: "Widow · 3 young children", need: "EGP 650 / month", story: "Her husband died suddenly of a stroke eight months ago. He left nothing behind. Her three children are between two and seven years old. She cleans homes four days a week, leaving the children with an elderly neighbour." } },
@@ -227,7 +234,7 @@ export default function Donate() {
                           : "border-white/10 text-white/55 hover:border-white/25 hover:text-white bg-white/[0.02]"
                       }`}
                     >
-                      <span>{cat.ar.icon}</span>
+                      {CATEGORY_ICONS[cat.id] ?? null}
                       <span>{isRTL ? cat.ar.label : cat.en.label}</span>
                     </button>
                   );
@@ -409,7 +416,7 @@ export default function Donate() {
                             transition={{ duration: 0.3 }}
                             className={`flex items-start gap-2 mt-3 p-3 rounded-xl border border-white/[0.06] bg-white/[0.02] ${isRTL ? "flex-row-reverse font-arabic text-right" : "text-left"}`}
                           >
-                            <span className="text-base leading-none mt-0.5 flex-shrink-0">⚡</span>
+                            <Zap size={12} className="flex-shrink-0 mt-0.5 text-gold/50" />
                             <p className="text-white/35 text-xs leading-relaxed">
                               {isRTL
                                 ? "إذا لم تختر حالة أو تصنيفًا، سيذهب تبرعك تلقائياً إلى الحالة الأشد إلحاحًا لدينا في وقت التبرع."

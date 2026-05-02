@@ -47,6 +47,8 @@ export interface DonateCase {
   isActive: boolean;
   isUrgent: boolean;
   order: number;
+  responsibleAdminId?: ObjectId;    // admin assigned to handle this case
+  responsibleAdminName?: string;    // denormalised for fast reads
   createdBy: ObjectId;
   createdAt: Date;
   updatedAt: Date;

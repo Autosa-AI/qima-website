@@ -16,6 +16,7 @@ interface Case {
   number: string;
   ar: { name: string; brief: string; story: string; need: string };
   en: { name: string; brief: string; story: string; need: string };
+  responsibleAdminName?: string;
 }
 
 interface Category {
@@ -36,6 +37,7 @@ interface ApiCategory {
     number: string;
     ar: { name: string; brief: string; story: string; need: string };
     en: { name: string; brief: string; story: string; need: string };
+    responsibleAdminName?: string;
   }>;
 }
 
@@ -131,9 +133,15 @@ export default function Donate() {
       return isRTL ? "الأولوية الأشد إلحاحًا" : "Most urgent priority";
     })();
 
+    const responsibleLine = selectedCase?.c.responsibleAdminName
+      ? (isRTL
+          ? `\n- المسؤول عن الحالة: ${selectedCase.c.responsibleAdminName}`
+          : `\n- Case handler: ${selectedCase.c.responsibleAdminName}`)
+      : "";
+
     const message = isRTL
-      ? `السلام عليكم فريق قيمة 🤝\n\nأريد التبرع بالتفاصيل التالية:\n\n💰 المبلغ: ${amountLabel}\n📋 الحالة / التصنيف: ${destinationLabel}\n\nأرجو التواصل معي لإتمام التبرع. شكراً جزيلاً 🙏`
-      : `Hello Qima team 🤝\n\nI'd like to donate with the following details:\n\n💰 Amount: ${amountLabel}\n📋 Case / Category: ${destinationLabel}\n\nPlease get in touch to complete the donation. Thank you 🙏`;
+      ? `السلام عليكم فريق قيمة،\n\nأريد التبرع بالتفاصيل التالية:\n- المبلغ: ${amountLabel}\n- الحالة / التصنيف: ${destinationLabel}${responsibleLine}\n\nارجو التواصل لإتمام التبرع. شكراً`
+      : `Hello Qima team,\n\nI would like to donate with the following details:\n- Amount: ${amountLabel}\n- Case / Category: ${destinationLabel}${responsibleLine}\n\nPlease get in touch to complete the donation. Thank you`;
 
     return `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
   }
@@ -152,6 +160,7 @@ export default function Donate() {
               number: c.number,
               ar: c.ar,
               en: c.en,
+              responsibleAdminName: c.responsibleAdminName,
             })),
           }));
           setCategories(mapped);

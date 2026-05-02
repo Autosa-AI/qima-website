@@ -23,19 +23,18 @@ interface Case {
   isActive: boolean;
   isUrgent: boolean;
   order: number;
+  responsibleAdminId?: string;
+  responsibleAdminName?: string;
 }
+
+interface AdminOption { _id: string; name: string; email: string }
 
 interface FormState {
   categoryId: string;
-  arName: string;
-  arBrief: string;
-  arStory: string;
-  arNeed: string;
-  enName: string;
-  enBrief: string;
-  enStory: string;
-  enNeed: string;
+  arName: string; arBrief: string; arStory: string; arNeed: string;
+  enName: string; enBrief: string; enStory: string; enNeed: string;
   isUrgent: boolean;
+  responsibleAdminId: string; // "" = unassigned
 }
 
 const EMPTY_FORM: FormState = {
@@ -43,35 +42,38 @@ const EMPTY_FORM: FormState = {
   arName: "", arBrief: "", arStory: "", arNeed: "",
   enName: "", enBrief: "", enStory: "", enNeed: "",
   isUrgent: false,
+  responsibleAdminId: "",
 };
 
 export default function CasesPage() {
   const { fetchWithAuth } = useAdmin();
   const { toast } = useToast();
 
-  const [cases, setCases] = useState<Case[]>([]);
+  const [cases, setCases]         = useState<Case[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
-  const [filterCat, setFilterCat] = useState<string>("all");
-  const [loading, setLoading] = useState(true);
-  const [showPanel, setShowPanel] = useState(false);
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [form, setForm] = useState<FormState>(EMPTY_FORM);
-  const [activeTab, setActiveTab] = useState<"ar" | "en">("ar");
-  const [saving, setSaving] = useState(false);
+  const [admins, setAdmins]         = useState<AdminOption[]>([]);
+  const [filterCat, setFilterCat]   = useState<string>("all");
+  const [loading, setLoading]       = useState(true);
+  const [showPanel, setShowPanel]   = useState(false);
+  const [editingId, setEditingId]   = useState<string | null>(null);
+  const [form, setForm]             = useState<FormState>(EMPTY_FORM);
+  const [activeTab, setActiveTab]   = useState<"ar" | "en">("ar");
+  const [saving, setSaving]         = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Case | null>(null);
 
   const fetchData = useCallback(async () => {
     try {
-      const [casesRes, catsRes] = await Promise.all([
+      const [casesRes, catsRes, adminsRes] = await Promise.all([
         fetchWithAuth("/api/cases"),
         fetchWithAuth("/api/categories"),
+        fetchWithAuth("/api/admins"),
       ]);
-      const [casesData, catsData] = await Promise.all([
-        casesRes.json(),
-        catsRes.json(),
+      const [casesData, catsData, adminsData] = await Promise.all([
+        casesRes.json(), catsRes.json(), adminsRes.json(),
       ]);
-      if (casesData.success) setCases(casesData.data ?? []);
-      if (catsData.success) setCategories(catsData.data ?? []);
+      if (casesData.success)  setCases(casesData.data ?? []);
+      if (catsData.success)   setCategories(catsData.data ?? []);
+      if (adminsData.success) setAdmins(adminsData.data ?? []);
     } catch {
       toast("Failed to load data", "error");
     } finally {
@@ -97,15 +99,10 @@ export default function CasesPage() {
     setEditingId(c._id);
     setForm({
       categoryId: c.categoryId,
-      arName: c.ar.name,
-      arBrief: c.ar.brief,
-      arStory: c.ar.story,
-      arNeed: c.ar.need,
-      enName: c.en.name,
-      enBrief: c.en.brief,
-      enStory: c.en.story,
-      enNeed: c.en.need,
+      arName: c.ar.name, arBrief: c.ar.brief, arStory: c.ar.story, arNeed: c.ar.need,
+      enName: c.en.name, enBrief: c.en.brief, enStory: c.en.story, enNeed: c.en.need,
       isUrgent: c.isUrgent,
+      responsibleAdminId: c.responsibleAdminId ?? "",
     });
     setActiveTab("ar");
     setShowPanel(true);
@@ -123,6 +120,7 @@ export default function CasesPage() {
         ar: { name: form.arName.trim(), brief: form.arBrief.trim(), story: form.arStory.trim(), need: form.arNeed.trim() },
         en: { name: form.enName.trim(), brief: form.enBrief.trim(), story: form.enStory.trim(), need: form.enNeed.trim() },
         isUrgent: form.isUrgent,
+        responsibleAdminId: form.responsibleAdminId || null,
       };
 
       const res = editingId
@@ -238,6 +236,7 @@ export default function CasesPage() {
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Brief (AR)</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Need</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Category</th>
+                <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Responsible</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Urgent</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Status</th>
                 <th className="px-4 py-3" />
@@ -251,6 +250,11 @@ export default function CasesPage() {
                   <td className="px-4 py-3.5 text-white/50 text-xs max-w-[180px] truncate">{c.ar.brief}</td>
                   <td className="px-4 py-3.5 text-[#C9A84C]/80 text-xs">{c.ar.need}</td>
                   <td className="px-4 py-3.5 text-white/50 text-xs">{getCategoryLabel(c.categoryId)}</td>
+                  <td className="px-4 py-3.5 text-xs">
+                    {c.responsibleAdminName
+                      ? <span className="text-[#C9A84C]/80">{c.responsibleAdminName}</span>
+                      : <span className="text-white/20">—</span>}
+                  </td>
                   <td className="px-4 py-3.5">
                     <button
                       onClick={() => handleToggle(c, "isUrgent")}
@@ -314,6 +318,26 @@ export default function CasesPage() {
                   {categories.map((cat) => (
                     <option key={cat._id} value={cat._id} className="bg-[#141414]">
                       {cat.icon} {cat.en.label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              {/* Responsible admin picker */}
+              <div>
+                <label className="block text-white/60 text-xs font-medium mb-1.5">
+                  Responsible Admin
+                  <span className="text-white/30 font-normal ml-1">(appears in donor WhatsApp message)</span>
+                </label>
+                <select
+                  value={form.responsibleAdminId}
+                  onChange={e => setForm(f => ({ ...f, responsibleAdminId: e.target.value }))}
+                  className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors"
+                >
+                  <option value="" className="bg-[#141414]">-- Unassigned --</option>
+                  {admins.map(a => (
+                    <option key={a._id} value={a._id} className="bg-[#141414]">
+                      {a.name} ({a.email})
                     </option>
                   ))}
                 </select>

@@ -34,12 +34,13 @@ export async function PUT(
       );
     }
 
-    const { categoryId, ar, en, isActive, isUrgent } = body as {
+    const { categoryId, ar, en, isActive, isUrgent, responsibleAdminId } = body as {
       categoryId?: string;
       ar?: { name: string; brief: string; story: string; need: string };
       en?: { name: string; brief: string; story: string; need: string };
       isActive?: boolean;
       isUrgent?: boolean;
+      responsibleAdminId?: string | null;
     };
 
     if (
@@ -73,6 +74,20 @@ export async function PUT(
       );
     }
 
+    // Resolve responsible admin
+    let resolvedResponsibleId: ObjectId | undefined;
+    let responsibleAdminName: string | undefined;
+    if (responsibleAdminId && ObjectId.isValid(responsibleAdminId)) {
+      const responsible = await db.collection("admins").findOne(
+        { _id: new ObjectId(responsibleAdminId) },
+        { projection: { name: 1 } }
+      );
+      if (responsible) {
+        resolvedResponsibleId = new ObjectId(responsibleAdminId);
+        responsibleAdminName  = responsible.name as string;
+      }
+    }
+
     const updates: Partial<DonateCase> = {
       categoryId: new ObjectId(categoryId),
       ar: {
@@ -92,6 +107,14 @@ export async function PUT(
 
     if (typeof isActive === "boolean") updates.isActive = isActive;
     if (typeof isUrgent === "boolean") updates.isUrgent = isUrgent;
+    // null = explicitly clear, undefined = leave unchanged
+    if (responsibleAdminId === null) {
+      updates.responsibleAdminId   = undefined;
+      updates.responsibleAdminName = undefined;
+    } else if (resolvedResponsibleId) {
+      updates.responsibleAdminId   = resolvedResponsibleId;
+      updates.responsibleAdminName = responsibleAdminName;
+    }
 
     await db
       .collection<DonateCase>("donate_cases")

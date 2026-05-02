@@ -102,12 +102,12 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   ctx.font = `700 ${sc(30)}px Cairo, Arial`;
   ctx.fillStyle = "#C9A84C";
   ctx.fillText("لأن للمساكين حقًا … جاءت قيمة", W / 2, Y + sc(30) * 0.82);
-  Y += sc(30) + sc(7);
+  Y += sc(30) + sc(10);
 
   ctx.font = `400 ${sc(18)}px Cairo, Arial`;
   ctx.fillStyle = "rgba(255,255,255,0.35)";
   ctx.fillText("تبرع الآن وكن جزءاً من التغيير", W / 2, Y + sc(18) * 0.82);
-  Y += sc(18) + sc(20);
+  Y += sc(18) + sc(28);
 
   /* ── Divider ─────────────────────────────────────────────────────────── */
   ctx.strokeStyle = "rgba(201,168,76,0.35)"; ctx.lineWidth = 1.5;
@@ -115,35 +115,33 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   ctx.beginPath(); ctx.moveTo(W / 2 + 14, Y); ctx.lineTo(W - PAGE_PAD - 16, Y); ctx.stroke();
   ctx.fillStyle = "#C9A84C";
   for (const d of [-7, 7]) { ctx.beginPath(); ctx.arc(W / 2 + d, Y, 2.8, 0, Math.PI * 2); ctx.fill(); }
-  Y += sc(22);
+  Y += sc(32);
 
   /* ── Cases ───────────────────────────────────────────────────────────── */
 
   // Fixed compact card dimensions — not stretched
-  const BAR_H   = sc(9);
+  const BAR_H   = sc(10);
   const NUM_F   = sc(17);
-  const NAME_F  = sc(25);
-  const BRIEF_F = sc(15);
-  const STAT_F  = sc(14);
+  const NAME_F  = sc(26);
+  const BRIEF_F = sc(16);
+  const STAT_F  = sc(15);
 
-  // Vertical slots inside card (top-padding = cp)
-  const cp      = sc(14); // card top/bottom padding
-  const r1      = cp + NAME_F;              // baseline row 1: number + name
-  const r2      = r1 + sc(6) + BRIEF_F;    // baseline row 2: brief
-  const barTop  = r2 + sc(10);             // top of progress bar
-  const r3      = barTop + BAR_H + sc(7) + STAT_F; // baseline row 3: stats
-  const CARD_H  = r3 + cp;                 // exact content height → card height
+  // Vertical slots inside card — generous padding for readability
+  const cp      = sc(20);                          // card top/bottom padding
+  const r1      = cp + NAME_F;                     // row 1: number + name
+  const r2      = r1 + sc(10) + BRIEF_F;           // row 2: brief
+  const barTop  = r2 + sc(14);                     // progress bar top
+  const r3      = barTop + BAR_H + sc(10) + STAT_F;// row 3: stats
+  const CARD_H  = r3 + cp;                         // total card height
 
-  const CARD_W  = W - PAGE_PAD * 2;
-  const CARD_GAP = sc(10);
+  const CARD_W   = W - PAGE_PAD * 2;
+  const CARD_GAP = sc(16);                         // gap between cards
 
-  // Accent bar
-  const ACC_W   = 7;
-  // Left edge of inner content (after accent bar + inner padding)
-  const IL      = PAGE_PAD + ACC_W + sc(16);
-  // Right edge
-  const IR      = PAGE_PAD + CARD_W - sc(16);
-  const TW      = IR - IL; // available text width
+  // Accent bar + inner horizontal padding
+  const ACC_W = 8;
+  const IL    = PAGE_PAD + ACC_W + sc(22);         // left text edge
+  const IR    = PAGE_PAD + CARD_W - sc(22);        // right text edge
+  const TW    = IR - IL;
 
   for (let i = 0; i < cases.length; i++) {
     const c  = cases[i];
@@ -243,21 +241,21 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   }
 
   /* ── Footer — pinned to bottom ─────────────────────────────────────── */
-  const FT_H   = sc(80);
+  const FT_H   = sc(90);
   const FT_TOP = H - FT_H;
 
   ctx.strokeStyle = "rgba(201,168,76,0.2)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(PAGE_PAD + 20, FT_TOP + sc(8)); ctx.lineTo(W - PAGE_PAD - 20, FT_TOP + sc(8)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAGE_PAD + 20, FT_TOP + sc(12)); ctx.lineTo(W - PAGE_PAD - 20, FT_TOP + sc(12)); ctx.stroke();
 
-  const FT_F = sc(18);
+  const FT_F = sc(19);
   ctx.font = `400 ${FT_F}px Cairo, Arial`;
   ctx.fillStyle = "rgba(255,255,255,0.32)";
   ctx.textAlign = "center"; ctx.direction = "ltr";
-  ctx.fillText("تبرع عبر واتساب  ·  +201039091390", W / 2, FT_TOP + sc(8) + FT_F + sc(10));
+  ctx.fillText("تبرع عبر واتساب  ·  +201039091390", W / 2, FT_TOP + sc(12) + FT_F + sc(12));
 
   ctx.font = `600 ${sc(14)}px Urbanist, Arial`;
   ctx.fillStyle = "rgba(201,168,76,0.45)";
-  ctx.fillText("qima-egypt.vercel.app", W / 2, FT_TOP + sc(8) + FT_F + sc(10) + sc(14) + sc(8));
+  ctx.fillText("qima-egypt.vercel.app", W / 2, FT_TOP + sc(12) + FT_F + sc(12) + sc(14) + sc(10));
 
   return canvas;
 }

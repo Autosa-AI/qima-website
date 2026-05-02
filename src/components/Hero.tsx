@@ -1,10 +1,16 @@
 "use client";
 import { motion } from "framer-motion";
+import { useEffect } from "react";
 import { useLang } from "@/context/LanguageContext";
 import { ArrowDown } from "lucide-react";
+import { trackEvent } from "@/hooks/useAnalytics";
 
 export default function Hero() {
   const { t, isRTL } = useLang();
+
+  useEffect(() => {
+    trackEvent("page_view");
+  }, []);
 
   return (
     <section className="relative min-h-screen flex flex-col items-center justify-center text-center px-6 overflow-hidden">

@@ -11,6 +11,7 @@ import {
   ScrollText,
   LogOut,
   Sparkles,
+  BarChart2,
 } from "lucide-react";
 import { useAdmin } from "./AdminContext";
 
@@ -27,8 +28,9 @@ const navItems: NavItem[] = [
   { href: "/admin/cases", label: "Cases", icon: <FileText size={18} /> },
   { href: "/admin/stories", label: "Stories", icon: <BookOpen size={18} /> },
   { href: "/admin/content", label: "Content", icon: <Type size={18} /> },
-  { href: "/admin/admins", label: "Admins", icon: <Users size={18} />, ownerOnly: true },
-  { href: "/admin/audit", label: "Audit Log", icon: <ScrollText size={18} /> },
+  { href: "/admin/admins",   label: "Admins",    icon: <Users size={18} />,    ownerOnly: true },
+  { href: "/admin/insights", label: "Insights",  icon: <BarChart2 size={18} />, ownerOnly: true },
+  { href: "/admin/audit",    label: "Audit Log", icon: <ScrollText size={18} />, ownerOnly: true },
 ];
 
 export default function AdminSidebar() {

@@ -38,7 +38,11 @@ const actionColors: Record<string, string> = {
 };
 
 export default function AuditPage() {
-  const { fetchWithAuth } = useAdmin();
+  const { fetchWithAuth, admin } = useAdmin();
+
+  if (admin && admin.role !== "owner") {
+    return <div className="p-8 text-center text-white/30 mt-20">Owner access required.</div>;
+  }
   const { toast } = useToast();
 
   const [logs, setLogs] = useState<AuditEntry[]>([]);

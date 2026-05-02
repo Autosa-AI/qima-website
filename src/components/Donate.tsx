@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useInView } from "framer-motion";
 import { useRef, useState, useEffect } from "react";
 import { useLang } from "@/context/LanguageContext";
 import { Shield, ChevronDown, Search, Check, X, CalendarDays, HeartHandshake, Users, Zap } from "lucide-react";
+import { trackEvent } from "@/hooks/useAnalytics";
 
 // Map category slugs to lucide icons — avoids emoji rendering issues
 const CATEGORY_ICONS: Record<string, React.ReactNode> = {
@@ -227,7 +228,14 @@ export default function Donate() {
                   return (
                     <button
                       key={cat.id}
-                      onClick={() => { setActiveCat(cat.id); setExpandedCase(null); }}
+                      onClick={() => {
+                        setActiveCat(cat.id);
+                        setExpandedCase(null);
+                        trackEvent("category_click", {
+                          categoryId: cat.id,
+                          categoryLabel: isRTL ? cat.ar.label : cat.en.label,
+                        });
+                      }}
                       className={`flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium border transition-all duration-300 ${
                         active
                           ? "bg-gold text-black border-gold shadow-[0_0_20px_rgba(201,168,76,0.25)]"
@@ -287,7 +295,16 @@ export default function Donate() {
                           <span className={`flex-shrink-0 text-gold/70 text-xs font-medium ${isRTL ? "font-arabic" : ""}`}>{content.need}</span>
                           {/* Select */}
                           <button
-                            onClick={() => { setCaseInput(c.number); setSelectedCase({ cat: category, c }); setInputError(false); }}
+                            onClick={() => {
+                              setCaseInput(c.number);
+                              setSelectedCase({ cat: category, c });
+                              setInputError(false);
+                              trackEvent("case_select", {
+                                caseNumber: c.number,
+                                caseName: isRTL ? c.ar.name : c.en.name,
+                                categoryId: category.id,
+                              });
+                            }}
                             className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
                               isSelected ? "bg-gold text-black" : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white"
                             }`}
@@ -470,6 +487,14 @@ export default function Donate() {
                   href={buildWhatsAppUrl()}
                   target="_blank"
                   rel="noopener noreferrer"
+                  onClick={() => {
+                    const amountKey = selectedAmount === "custom" ? customAmountValue || "custom" : selectedAmount;
+                    trackEvent("donate_intent", {
+                      amount: amountKey,
+                      caseNumber: selectedCase?.c.number ?? "",
+                      categoryId: selectedCatInBox ?? selectedCase?.cat.id ?? "",
+                    });
+                  }}
                   className="group relative flex items-center justify-center gap-2 w-full px-6 py-3.5 bg-gold text-black font-bold rounded-2xl overflow-hidden transition-all hover:shadow-[0_0_28px_rgba(201,168,76,0.4)] hover:scale-[1.02] active:scale-[0.98] text-sm"
                 >
                   {/* WhatsApp icon */}

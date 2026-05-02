@@ -284,13 +284,25 @@ export default function Donate() {
                         initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ delay: i * 0.07 }}
-                        className={`rounded-2xl border overflow-hidden transition-all duration-300 ${
-                          isSelected ? "border-gold/40 bg-gold/[0.04]" : "border-white/[0.06] bg-white/[0.02] hover:border-white/10"
+                        onClick={() => {
+                          setCaseInput(c.number);
+                          setSelectedCase({ cat: category, c });
+                          setInputError(false);
+                          trackEvent("case_select", {
+                            caseNumber: c.number,
+                            caseName: isRTL ? c.ar.name : c.en.name,
+                            categoryId: category.id,
+                          });
+                        }}
+                        className={`rounded-2xl border overflow-hidden transition-all duration-300 cursor-pointer ${
+                          isSelected
+                            ? "border-gold/40 bg-gold/[0.04]"
+                            : "border-white/[0.06] bg-white/[0.02] hover:border-gold/20 hover:bg-gold/[0.02]"
                         }`}
                       >
                         <div className={`flex items-center gap-3 p-4 ${isRTL ? "flex-row-reverse" : ""}`}>
                           {/* Number */}
-                          <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-mono text-xs font-bold ${
+                          <div className={`flex-shrink-0 w-10 h-10 rounded-xl flex items-center justify-center font-mono text-xs font-bold transition-colors ${
                             isSelected ? "bg-gold text-black" : "bg-white/5 text-white/35"
                           }`}>
                             {c.number}
@@ -302,27 +314,15 @@ export default function Donate() {
                           </div>
                           {/* Need */}
                           <span className={`flex-shrink-0 text-gold/70 text-xs font-medium ${isRTL ? "font-arabic" : ""}`}>{content.need}</span>
-                          {/* Select */}
-                          <button
-                            onClick={() => {
-                              setCaseInput(c.number);
-                              setSelectedCase({ cat: category, c });
-                              setInputError(false);
-                              trackEvent("case_select", {
-                                caseNumber: c.number,
-                                caseName: isRTL ? c.ar.name : c.en.name,
-                                categoryId: category.id,
-                              });
-                            }}
-                            className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
-                              isSelected ? "bg-gold text-black" : "bg-white/5 text-white/30 hover:bg-white/10 hover:text-white"
-                            }`}
-                          >
+                          {/* Selection indicator */}
+                          <div className={`flex-shrink-0 w-7 h-7 rounded-lg flex items-center justify-center transition-all ${
+                            isSelected ? "bg-gold text-black" : "bg-white/5 text-white/30"
+                          }`}>
                             {isSelected ? <Check size={12} /> : <span className="text-xs leading-none">+</span>}
-                          </button>
-                          {/* Expand */}
+                          </div>
+                          {/* Expand — stop propagation so clicking Story doesn't select */}
                           <button
-                            onClick={() => setExpandedCase(isExpanded ? null : c.number)}
+                            onClick={e => { e.stopPropagation(); setExpandedCase(isExpanded ? null : c.number); }}
                             className={`flex-shrink-0 flex items-center gap-1 text-white/30 hover:text-white/60 transition-colors ${isRTL ? "flex-row-reverse font-arabic" : ""}`}
                           >
                             <span className="text-[10px] tracking-wide">{isRTL ? "القصة" : "Story"}</span>

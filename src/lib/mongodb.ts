@@ -1,8 +1,7 @@
 import { MongoClient, MongoClientOptions, Db } from "mongodb";
 
-const MONGODB_URI =
-  process.env.MONGODB_URI ||
-  "mongodb+srv://qima:p27MCYmY6ZPZeN4H@qima.mlppqec.mongodb.net/?appName=Qima";
+const MONGODB_URI = process.env.MONGODB_URI;
+if (!MONGODB_URI) throw new Error("MONGODB_URI environment variable is not set");
 
 const DB_NAME = "qima";
 

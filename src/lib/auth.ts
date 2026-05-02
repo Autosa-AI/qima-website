@@ -3,8 +3,7 @@ import { SignJWT, jwtVerify } from "jose";
 import type { TokenPayload } from "./models";
 
 const BCRYPT_ROUNDS = 12;
-const JWT_SECRET_STRING =
-  process.env.JWT_SECRET || "qima-dev-secret-change-in-production-2025";
+const JWT_SECRET_STRING = process.env.JWT_SECRET || "qima-dev-local-only";
 
 function getSecret(): Uint8Array {
   return new TextEncoder().encode(JWT_SECRET_STRING);

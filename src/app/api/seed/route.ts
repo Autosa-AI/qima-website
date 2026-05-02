@@ -4,7 +4,7 @@ import { hashPassword } from "@/lib/auth";
 import { ObjectId } from "mongodb";
 import type { Admin, DonateCategory, DonateCase, ImpactStory } from "@/lib/models";
 
-const SEED_SECRET = process.env.SEED_SECRET || "qima-seed-2025";
+const SEED_SECRET = process.env.SEED_SECRET || "qima-seed-local";
 
 export async function POST(req: NextRequest) {
   try {

@@ -1,10 +1,40 @@
 import type { Metadata } from "next";
 import "./globals.css";
 
+const SITE_URL = "https://qima-website.vercel.app";
+const OG_IMAGE = `${SITE_URL}/og-image.png`;
+
 export const metadata: Metadata = {
+  metadataBase: new URL(SITE_URL),
   title: "قيمة | Qima · Egyptian Charity",
-  description: "Qima (قيمة) is an Egyptian charity organization building real value through education, empowerment, and hope.",
-  keywords: ["قيمة", "Qima", "Egyptian charity", "خيرية مصرية", "تبرع", "donate"],
+  description: "لأن للمساكين حقًا… جاءت قيمة. منظمة خيرية مصرية تجد الكادحين الصامتين وتوصل إليهم حقهم.",
+  keywords: ["قيمة", "Qima", "Egyptian charity", "خيرية مصرية", "تبرع", "donate", "مساكين"],
+
+  openGraph: {
+    type: "website",
+    url: SITE_URL,
+    siteName: "قيمة — Qima",
+    title: "قيمة | لأن للمساكين حقًا… جاءت قيمة",
+    description: "منظمة خيرية مصرية تجد الكادحين الصامتين وتوصل إليهم حقهم. تبرع الآن.",
+    images: [
+      {
+        url: OG_IMAGE,
+        width: 1200,
+        height: 630,
+        alt: "قيمة — Qima Egyptian Charity",
+        type: "image/png",
+      },
+    ],
+    locale: "ar_EG",
+  },
+
+  twitter: {
+    card: "summary_large_image",
+    title: "قيمة | لأن للمساكين حقًا… جاءت قيمة",
+    description: "منظمة خيرية مصرية تجد الكادحين الصامتين وتوصل إليهم حقهم.",
+    images: [OG_IMAGE],
+  },
+
   icons: {
     icon: [
       { url: "/favicon-32.png",  sizes: "32x32",   type: "image/png" },

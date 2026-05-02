@@ -4,7 +4,8 @@ import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import FormField from "@/components/admin/FormField";
-import { Plus, Edit2, Trash2, Zap } from "lucide-react";
+import { Plus, Edit2, Trash2, Zap, ImageIcon } from "lucide-react";
+import ShareImageGenerator, { type CaseForImage } from "@/components/admin/ShareImageGenerator";
 
 interface Category {
   _id: string;
@@ -25,6 +26,8 @@ interface Case {
   order: number;
   responsibleAdminId?: string;
   responsibleAdminName?: string;
+  targetAmount?: number;
+  raisedAmount?: number;
 }
 
 interface AdminOption { _id: string; name: string; email: string }
@@ -34,7 +37,9 @@ interface FormState {
   arName: string; arBrief: string; arStory: string; arNeed: string;
   enName: string; enBrief: string; enStory: string; enNeed: string;
   isUrgent: boolean;
-  responsibleAdminId: string; // "" = unassigned
+  responsibleAdminId: string;
+  targetAmount: string;
+  raisedAmount: string;
 }
 
 const EMPTY_FORM: FormState = {
@@ -43,6 +48,8 @@ const EMPTY_FORM: FormState = {
   enName: "", enBrief: "", enStory: "", enNeed: "",
   isUrgent: false,
   responsibleAdminId: "",
+  targetAmount: "",
+  raisedAmount: "",
 };
 
 export default function CasesPage() {
@@ -58,8 +65,9 @@ export default function CasesPage() {
   const [editingId, setEditingId]   = useState<string | null>(null);
   const [form, setForm]             = useState<FormState>(EMPTY_FORM);
   const [activeTab, setActiveTab]   = useState<"ar" | "en">("ar");
-  const [saving, setSaving]         = useState(false);
+  const [saving, setSaving]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Case | null>(null);
+  const [showShareModal, setShowShareModal] = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -103,6 +111,8 @@ export default function CasesPage() {
       enName: c.en.name, enBrief: c.en.brief, enStory: c.en.story, enNeed: c.en.need,
       isUrgent: c.isUrgent,
       responsibleAdminId: c.responsibleAdminId ?? "",
+      targetAmount: c.targetAmount !== undefined ? String(c.targetAmount) : "",
+      raisedAmount: c.raisedAmount !== undefined ? String(c.raisedAmount) : "",
     });
     setActiveTab("ar");
     setShowPanel(true);
@@ -121,6 +131,8 @@ export default function CasesPage() {
         en: { name: form.enName.trim(), brief: form.enBrief.trim(), story: form.enStory.trim(), need: form.enNeed.trim() },
         isUrgent: form.isUrgent,
         responsibleAdminId: form.responsibleAdminId || null,
+        ...(form.targetAmount !== "" && { targetAmount: Number(form.targetAmount) }),
+        ...(form.raisedAmount !== "" && { raisedAmount: Number(form.raisedAmount) }),
       };
 
       const res = editingId
@@ -179,13 +191,22 @@ export default function CasesPage() {
           <h1 className="text-white text-2xl font-bold">Cases</h1>
           <p className="text-white/40 text-sm mt-1">Manage donation cases</p>
         </div>
-        <button
-          onClick={openAdd}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#C9A84C] text-black text-sm font-bold hover:bg-[#d4b05a] transition-colors"
-        >
-          <Plus size={16} />
-          Add Case
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowShareModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+          >
+            <ImageIcon size={16} />
+            Share Image
+          </button>
+          <button
+            onClick={openAdd}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-[#C9A84C] text-black text-sm font-bold hover:bg-[#d4b05a] transition-colors"
+          >
+            <Plus size={16} />
+            Add Case
+          </button>
+        </div>
       </div>
 
       {/* Category filter */}
@@ -343,6 +364,38 @@ export default function CasesPage() {
                 </select>
               </div>
 
+              {/* Progress fields */}
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-white/60 text-xs font-medium mb-1.5">Target Amount (EGP)</label>
+                  <input
+                    type="number" min="0"
+                    value={form.targetAmount}
+                    onChange={e => setForm(f => ({ ...f, targetAmount: e.target.value }))}
+                    placeholder="e.g. 5000"
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors"
+                  />
+                </div>
+                <div>
+                  <label className="block text-white/60 text-xs font-medium mb-1.5">Raised So Far (EGP)</label>
+                  <input
+                    type="number" min="0"
+                    value={form.raisedAmount}
+                    onChange={e => setForm(f => ({ ...f, raisedAmount: e.target.value }))}
+                    placeholder="e.g. 2400"
+                    className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors"
+                  />
+                </div>
+              </div>
+              {form.targetAmount && Number(form.targetAmount) > 0 && (
+                <div className="flex items-center gap-2">
+                  <div className="flex-1 h-1.5 bg-white/10 rounded-full overflow-hidden">
+                    <div className="h-full bg-[#C9A84C] rounded-full transition-all" style={{ width: `${Math.min(100, Math.round((Number(form.raisedAmount) || 0) / Number(form.targetAmount) * 100))}%` }} />
+                  </div>
+                  <span className="text-[#C9A84C] text-xs font-bold">{Math.min(100, Math.round((Number(form.raisedAmount) || 0) / Number(form.targetAmount) * 100))}%</span>
+                </div>
+              )}
+
               {/* Urgent toggle */}
               <div className="flex items-center gap-3">
                 <button
@@ -409,6 +462,13 @@ export default function CasesPage() {
           danger
           onConfirm={() => handleDelete(confirmDelete)}
           onCancel={() => setConfirmDelete(null)}
+        />
+      )}
+
+      {showShareModal && (
+        <ShareImageGenerator
+          cases={cases.filter(c => c.isActive) as CaseForImage[]}
+          onClose={() => setShowShareModal(false)}
         />
       )}
     </div>

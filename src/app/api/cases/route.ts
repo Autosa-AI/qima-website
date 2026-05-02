@@ -54,12 +54,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, ar, en, isUrgent, responsibleAdminId } = body as {
+    const { categoryId, ar, en, isUrgent, responsibleAdminId, targetAmount } = body as {
       categoryId?: string;
       ar?: { name: string; brief: string; story: string; need: string };
       en?: { name: string; brief: string; story: string; need: string };
       isUrgent?: boolean;
       responsibleAdminId?: string;
+      targetAmount?: number;
     };
 
     if (
@@ -146,6 +147,7 @@ export async function POST(req: NextRequest) {
       isUrgent: isUrgent === true,
       order,
       ...(resolvedResponsibleId && { responsibleAdminId: resolvedResponsibleId, responsibleAdminName }),
+      ...(typeof targetAmount === "number" && targetAmount >= 0 && { targetAmount, raisedAmount: 0 }),
       createdBy: new ObjectId(payload.sub),
       createdAt: now,
       updatedAt: now,

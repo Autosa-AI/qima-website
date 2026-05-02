@@ -34,13 +34,15 @@ export async function PUT(
       );
     }
 
-    const { categoryId, ar, en, isActive, isUrgent, responsibleAdminId } = body as {
+    const { categoryId, ar, en, isActive, isUrgent, responsibleAdminId, targetAmount, raisedAmount } = body as {
       categoryId?: string;
       ar?: { name: string; brief: string; story: string; need: string };
       en?: { name: string; brief: string; story: string; need: string };
       isActive?: boolean;
       isUrgent?: boolean;
       responsibleAdminId?: string | null;
+      targetAmount?: number;
+      raisedAmount?: number;
     };
 
     if (
@@ -105,8 +107,10 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    if (typeof isActive === "boolean") updates.isActive = isActive;
-    if (typeof isUrgent === "boolean") updates.isUrgent = isUrgent;
+    if (typeof isActive      === "boolean") updates.isActive      = isActive;
+    if (typeof isUrgent      === "boolean") updates.isUrgent      = isUrgent;
+    if (typeof targetAmount  === "number" && targetAmount  >= 0)  updates.targetAmount  = targetAmount;
+    if (typeof raisedAmount  === "number" && raisedAmount  >= 0)  updates.raisedAmount  = raisedAmount;
     // null = explicitly clear, undefined = leave unchanged
     if (responsibleAdminId === null) {
       updates.responsibleAdminId   = undefined;
@@ -232,8 +236,10 @@ export async function PATCH(
     const caseId = new ObjectId(id);
 
     const updates: Partial<DonateCase> = { updatedAt: new Date() };
-    if (typeof body.isUrgent === "boolean") updates.isUrgent = body.isUrgent;
-    if (typeof body.isActive === "boolean") updates.isActive = body.isActive;
+    if (typeof body.isUrgent     === "boolean") updates.isUrgent     = body.isUrgent;
+    if (typeof body.isActive     === "boolean") updates.isActive     = body.isActive;
+    if (typeof body.raisedAmount === "number" && body.raisedAmount >= 0) updates.raisedAmount = body.raisedAmount;
+    if (typeof body.targetAmount === "number" && body.targetAmount >= 0) updates.targetAmount = body.targetAmount;
 
     await db
       .collection<DonateCase>("donate_cases")

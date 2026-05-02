@@ -4,8 +4,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Menu, X } from "lucide-react";
 import { useLang } from "@/context/LanguageContext";
 
-const navKeys = ["nav_about", "nav_mission", "nav_projects", "nav_impact", "nav_donate", "nav_contact"];
-const navHrefs = ["#about", "#mission", "#projects", "#impact", "#donate", "#contact"];
+const navKeys  = ["nav_about", "nav_mission", "nav_projects", "nav_impact", "nav_donate", "nav_contact"];
+const navHrefs = ["#about",   "#mission",    "#projects",    "#impact",    "/donate",    "#contact"];
 
 export default function Navigation() {
   const { lang, setLang, t, isRTL } = useLang();
@@ -20,6 +20,7 @@ export default function Navigation() {
 
   const scrollTo = (href: string) => {
     setMenuOpen(false);
+    if (href.startsWith("/")) { window.location.href = href; return; }
     document.querySelector(href)?.scrollIntoView({ behavior: "smooth" });
   };
 

@@ -47,8 +47,10 @@ export interface DonateCase {
   isActive: boolean;
   isUrgent: boolean;
   order: number;
-  responsibleAdminId?: ObjectId;    // admin assigned to handle this case
-  responsibleAdminName?: string;    // denormalised for fast reads
+  responsibleAdminId?: ObjectId;
+  responsibleAdminName?: string;
+  targetAmount?: number;   // fundraising goal in EGP
+  raisedAmount?: number;   // amount raised so far, updated by admin
   createdBy: ObjectId;
   createdAt: Date;
   updatedAt: Date;

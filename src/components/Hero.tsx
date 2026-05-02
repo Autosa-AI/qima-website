@@ -89,7 +89,7 @@ export default function Hero() {
           className={`flex flex-col sm:flex-row items-center justify-center gap-4 ${isRTL ? "sm:flex-row-reverse font-arabic" : ""}`}
         >
           <button
-            onClick={() => document.querySelector("#donate")?.scrollIntoView({ behavior: "smooth" })}
+            onClick={() => { window.location.href = "/donate"; }}
             className="group relative px-8 py-3.5 bg-gold text-black font-bold rounded-full overflow-hidden transition-all hover:shadow-[0_0_35px_rgba(201,168,76,0.5)] hover:scale-105 active:scale-95"
           >
             <span className="relative z-10">{t("hero_cta_donate")}</span>

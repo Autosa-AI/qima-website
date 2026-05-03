@@ -30,7 +30,7 @@ const navItems: NavItem[] = [
   { href: "/admin/content", label: "Content", icon: <Type size={18} /> },
   { href: "/admin/admins",   label: "Admins",    icon: <Users size={18} />,    ownerOnly: true },
   { href: "/admin/insights", label: "Insights",  icon: <BarChart2 size={18} />, ownerOnly: true },
-  { href: "/admin/audit",    label: "Audit Log", icon: <ScrollText size={18} />, ownerOnly: true },
+  { href: "/admin/audit",    label: "Audit Log", icon: <ScrollText size={18} /> },
 ];
 
 export default function AdminSidebar() {
@@ -59,6 +59,9 @@ export default function AdminSidebar() {
           if (item.ownerOnly && (loading || admin?.role !== "owner")) return null;
           const isActive =
             pathname === item.href || pathname.startsWith(item.href + "/");
+          const label = item.href === "/admin/audit" && admin?.role !== "owner"
+            ? "My Activity"
+            : item.label;
 
           return (
             <Link
@@ -70,12 +73,10 @@ export default function AdminSidebar() {
                   : "text-white/50 hover:text-white hover:bg-white/[0.04]"
               }`}
             >
-              <span
-                className={isActive ? "text-[#C9A84C]" : "text-white/40"}
-              >
+              <span className={isActive ? "text-[#C9A84C]" : "text-white/40"}>
                 {item.icon}
               </span>
-              {item.label}
+              {label}
             </Link>
           );
         })}

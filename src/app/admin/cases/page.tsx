@@ -4,7 +4,7 @@ import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import FormField from "@/components/admin/FormField";
-import { Plus, Edit2, Trash2, Zap, ImageIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, Zap, ImageIcon, ChevronDown, User, Phone, Image as ImageIconLucide, X as XIcon } from "lucide-react";
 import ShareImageGenerator, { type CaseForImage } from "@/components/admin/ShareImageGenerator";
 
 interface Category {
@@ -28,6 +28,7 @@ interface Case {
   responsibleAdminName?: string;
   targetAmount?: number;
   raisedAmount?: number;
+  beneficiary?: { name?: string; phone?: string; proofImageUrl?: string };
 }
 
 interface AdminOption { _id: string; name: string; email: string }
@@ -40,6 +41,9 @@ interface FormState {
   responsibleAdminId: string;
   targetAmount: string;
   raisedAmount: string;
+  beneficiaryName: string;
+  beneficiaryPhone: string;
+  beneficiaryProof: string; // URL after upload
 }
 
 const EMPTY_FORM: FormState = {
@@ -50,6 +54,9 @@ const EMPTY_FORM: FormState = {
   responsibleAdminId: "",
   targetAmount: "",
   raisedAmount: "",
+  beneficiaryName: "",
+  beneficiaryPhone: "",
+  beneficiaryProof: "",
 };
 
 export default function CasesPage() {
@@ -69,6 +76,8 @@ export default function CasesPage() {
   const [saving, setSaving]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Case | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [beneficiaryOpen, setBeneficiaryOpen] = useState(false);
+  const [uploadingProof, setUploadingProof]   = useState(false);
 
   const fetchData = useCallback(async () => {
     try {
@@ -101,6 +110,7 @@ export default function CasesPage() {
     setEditingId(null);
     setForm({ ...EMPTY_FORM, categoryId: categories[0]?._id ?? "" });
     setActiveTab("ar");
+    setBeneficiaryOpen(false);
     setShowPanel(true);
   }
 
@@ -114,8 +124,12 @@ export default function CasesPage() {
       responsibleAdminId: c.responsibleAdminId ?? "",
       targetAmount: c.targetAmount !== undefined ? String(c.targetAmount) : "",
       raisedAmount: c.raisedAmount !== undefined ? String(c.raisedAmount) : "",
+      beneficiaryName:  c.beneficiary?.name  ?? "",
+      beneficiaryPhone: c.beneficiary?.phone ?? "",
+      beneficiaryProof: c.beneficiary?.proofImageUrl ?? "",
     });
     setActiveTab("ar");
+    setBeneficiaryOpen(!!(c.beneficiary?.name || c.beneficiary?.phone || c.beneficiary?.proofImageUrl));
     setShowPanel(true);
   }
 
@@ -126,6 +140,7 @@ export default function CasesPage() {
     }
     setSaving(true);
     try {
+      const hasBeneficiary = form.beneficiaryName.trim() || form.beneficiaryPhone.trim() || form.beneficiaryProof;
       const payload = {
         categoryId: form.categoryId,
         ar: { name: form.arName.trim(), brief: form.arBrief.trim(), story: form.arStory.trim(), need: form.arNeed.trim() },
@@ -134,6 +149,11 @@ export default function CasesPage() {
         responsibleAdminId: form.responsibleAdminId || null,
         ...(form.targetAmount !== "" && { targetAmount: Number(form.targetAmount) }),
         ...(form.raisedAmount !== "" && { raisedAmount: Number(form.raisedAmount) }),
+        beneficiary: hasBeneficiary ? {
+          ...(form.beneficiaryName.trim()  && { name:          form.beneficiaryName.trim() }),
+          ...(form.beneficiaryPhone.trim() && { phone:         form.beneficiaryPhone.trim() }),
+          ...(form.beneficiaryProof        && { proofImageUrl: form.beneficiaryProof }),
+        } : null,
       };
 
       const res = editingId
@@ -178,6 +198,27 @@ export default function CasesPage() {
       fetchData();
     } catch (err) {
       toast(err instanceof Error ? err.message : "Failed to update", "error");
+    }
+  }
+
+  async function handleProofUpload(file: File) {
+    setUploadingProof(true);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const token = typeof window !== "undefined" ? localStorage.getItem("qima_admin_token") : null;
+      const res  = await fetch("/api/upload", {
+        method: "POST",
+        body: fd,
+        headers: token ? { Authorization: `Bearer ${token}` } : {},
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      setForm(f => ({ ...f, beneficiaryProof: data.url }));
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Upload failed", "error");
+    } finally {
+      setUploadingProof(false);
     }
   }
 
@@ -450,6 +491,96 @@ export default function CasesPage() {
                   <FormField label="Need" required value={form.enNeed} onChange={(e) => setForm((f) => ({ ...f, enNeed: (e.target as HTMLInputElement).value }))} placeholder="EGP 400 / month" />
                 </div>
               )}
+
+              {/* Beneficiary info — collapsible, optional */}
+              <div className="border border-white/[0.07] rounded-2xl overflow-hidden">
+                <button
+                  type="button"
+                  onClick={() => setBeneficiaryOpen(v => !v)}
+                  className="w-full flex items-center justify-between px-4 py-3 text-sm text-white/60 hover:text-white/80 hover:bg-white/[0.03] transition-colors"
+                >
+                  <div className="flex items-center gap-2">
+                    <User size={13} />
+                    <span>Beneficiary Info</span>
+                    <span className="text-white/25 text-xs font-normal">(optional · private)</span>
+                    {(form.beneficiaryName || form.beneficiaryPhone || form.beneficiaryProof) && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#C9A84C]" />
+                    )}
+                  </div>
+                  <ChevronDown size={14} className={`transition-transform ${beneficiaryOpen ? "rotate-180" : ""}`} />
+                </button>
+
+                {beneficiaryOpen && (
+                  <div className="px-4 pb-4 pt-1 space-y-4 border-t border-white/[0.06]">
+                    {/* Name */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-white/50 text-xs font-medium mb-1.5">
+                        <User size={11} /> Full name
+                      </label>
+                      <input
+                        type="text"
+                        value={form.beneficiaryName}
+                        onChange={e => setForm(f => ({ ...f, beneficiaryName: e.target.value }))}
+                        placeholder="e.g. محمد أحمد"
+                        className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors placeholder:text-white/20"
+                      />
+                    </div>
+
+                    {/* Phone */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-white/50 text-xs font-medium mb-1.5">
+                        <Phone size={11} /> Phone number
+                      </label>
+                      <input
+                        type="tel"
+                        value={form.beneficiaryPhone}
+                        onChange={e => setForm(f => ({ ...f, beneficiaryPhone: e.target.value }))}
+                        placeholder="e.g. 0100 000 0000"
+                        className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors placeholder:text-white/20"
+                      />
+                    </div>
+
+                    {/* Proof image */}
+                    <div>
+                      <label className="flex items-center gap-1.5 text-white/50 text-xs font-medium mb-1.5">
+                        <ImageIconLucide size={11} /> Proof image
+                      </label>
+
+                      {form.beneficiaryProof ? (
+                        <div className="relative rounded-xl overflow-hidden border border-white/10 group">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img src={form.beneficiaryProof} alt="Proof" className="w-full max-h-48 object-cover" />
+                          <button
+                            type="button"
+                            onClick={() => setForm(f => ({ ...f, beneficiaryProof: "" }))}
+                            className="absolute top-2 right-2 w-7 h-7 rounded-lg bg-black/70 border border-white/20 flex items-center justify-center text-white/70 hover:text-white transition-colors opacity-0 group-hover:opacity-100"
+                          >
+                            <XIcon size={12} />
+                          </button>
+                        </div>
+                      ) : (
+                        <label className={`flex flex-col items-center justify-center gap-2 w-full h-28 rounded-xl border-2 border-dashed transition-colors cursor-pointer ${uploadingProof ? "border-white/10 pointer-events-none" : "border-white/10 hover:border-[#C9A84C]/40 hover:bg-[#C9A84C]/[0.03]"}`}>
+                          {uploadingProof ? (
+                            <span className="text-white/30 text-xs">Uploading…</span>
+                          ) : (
+                            <>
+                              <ImageIconLucide size={20} className="text-white/20" />
+                              <span className="text-white/35 text-xs">Click to upload (JPEG/PNG/WebP · max 5 MB)</span>
+                            </>
+                          )}
+                          <input
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp"
+                            className="hidden"
+                            disabled={uploadingProof}
+                            onChange={e => { const f = e.target.files?.[0]; if (f) handleProofUpload(f); e.target.value = ""; }}
+                          />
+                        </label>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
             <div className="px-6 py-4 border-t border-white/[0.06] flex gap-3 justify-end">

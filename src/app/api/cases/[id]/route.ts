@@ -34,7 +34,7 @@ export async function PUT(
       );
     }
 
-    const { categoryId, ar, en, isActive, isUrgent, responsibleAdminId, targetAmount, raisedAmount } = body as {
+    const { categoryId, ar, en, isActive, isUrgent, responsibleAdminId, targetAmount, raisedAmount, beneficiary } = body as {
       categoryId?: string;
       ar?: { name: string; brief: string; story: string; need: string };
       en?: { name: string; brief: string; story: string; need: string };
@@ -43,6 +43,7 @@ export async function PUT(
       responsibleAdminId?: string | null;
       targetAmount?: number;
       raisedAmount?: number;
+      beneficiary?: { name?: string; phone?: string; proofImageUrl?: string } | null;
     };
 
     if (
@@ -76,6 +77,14 @@ export async function PUT(
       );
     }
 
+    // Non-owner admins can only edit their own cases
+    if (payload.role !== "owner" && existing.responsibleAdminId?.toString() !== payload.sub) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
     const updates: Partial<DonateCase> = {
       categoryId: new ObjectId(categoryId),
       ar: {
@@ -97,6 +106,15 @@ export async function PUT(
     if (typeof isUrgent     === "boolean") updates.isUrgent     = isUrgent;
     if (typeof targetAmount === "number" && targetAmount >= 0)  updates.targetAmount = targetAmount;
     if (typeof raisedAmount === "number" && raisedAmount >= 0)  updates.raisedAmount = raisedAmount;
+    if (beneficiary === null) {
+      updates.beneficiary = undefined;
+    } else if (beneficiary) {
+      updates.beneficiary = {
+        ...(beneficiary.name?.trim()          && { name:          beneficiary.name.trim() }),
+        ...(beneficiary.phone?.trim()         && { phone:         beneficiary.phone.trim() }),
+        ...(beneficiary.proofImageUrl?.trim() && { proofImageUrl: beneficiary.proofImageUrl.trim() }),
+      };
+    }
 
     // Only owner can change the responsible admin
     if (payload.role === "owner" && responsibleAdminId !== undefined) {
@@ -172,6 +190,13 @@ export async function DELETE(
       );
     }
 
+    if (payload.role !== "owner" && existing.responsibleAdminId?.toString() !== payload.sub) {
+      return NextResponse.json(
+        { success: false, error: "Forbidden" },
+        { status: 403 }
+      );
+    }
+
     await db
       .collection<DonateCase>("donate_cases")
       .updateOne(
@@ -229,6 +254,16 @@ export async function PATCH(
 
     const db = await getDb();
     const caseId = new ObjectId(id);
+
+    const existingForPatch = await db
+      .collection<DonateCase>("donate_cases")
+      .findOne({ _id: caseId }, { projection: { responsibleAdminId: 1 } });
+    if (!existingForPatch) {
+      return NextResponse.json({ success: false, error: "Case not found" }, { status: 404 });
+    }
+    if (payload.role !== "owner" && existingForPatch.responsibleAdminId?.toString() !== payload.sub) {
+      return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+    }
 
     const updates: Partial<DonateCase> = { updatedAt: new Date() };
     if (typeof body.isUrgent     === "boolean") updates.isUrgent     = body.isUrgent;

@@ -16,6 +16,12 @@ export async function GET(req: NextRequest) {
     const db = await getDb();
 
     const filter: Record<string, unknown> = isAdmin ? {} : { isActive: true };
+
+    // Non-owner admins only see their own cases
+    if (payload && payload.role !== "owner") {
+      filter.responsibleAdminId = new ObjectId(payload.sub);
+    }
+
     if (categoryId && ObjectId.isValid(categoryId)) {
       filter.categoryId = new ObjectId(categoryId);
     }
@@ -54,12 +60,13 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, ar, en, isUrgent, targetAmount } = body as {
+    const { categoryId, ar, en, isUrgent, targetAmount, beneficiary } = body as {
       categoryId?: string;
       ar?: { name: string; brief: string; story: string; need: string };
       en?: { name: string; brief: string; story: string; need: string };
       isUrgent?: boolean;
       targetAmount?: number;
+      beneficiary?: { name?: string; phone?: string; proofImageUrl?: string };
     };
 
     if (
@@ -135,6 +142,13 @@ export async function POST(req: NextRequest) {
       responsibleAdminId:   new ObjectId(payload.sub),
       responsibleAdminName: payload.name,
       ...(typeof targetAmount === "number" && targetAmount >= 0 && { targetAmount, raisedAmount: 0 }),
+      ...(beneficiary && Object.values(beneficiary).some(Boolean) && {
+        beneficiary: {
+          ...(beneficiary.name?.trim()         && { name:          beneficiary.name.trim() }),
+          ...(beneficiary.phone?.trim()        && { phone:         beneficiary.phone.trim() }),
+          ...(beneficiary.proofImageUrl?.trim() && { proofImageUrl: beneficiary.proofImageUrl.trim() }),
+        },
+      }),
       createdBy: new ObjectId(payload.sub),
       createdAt: now,
       updatedAt: now,

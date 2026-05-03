@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getAdminFromRequest } from "@/lib/auth";
 import { getDb } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 import type { AuditLog } from "@/lib/models";
 
 export async function GET(req: NextRequest) {
@@ -12,7 +13,6 @@ export async function GET(req: NextRequest) {
         { status: 401 }
       );
     }
-
     const { searchParams } = new URL(req.url);
     const limit = Math.min(parseInt(searchParams.get("limit") ?? "20"), 100);
     const page = Math.max(parseInt(searchParams.get("page") ?? "1"), 1);
@@ -21,6 +21,12 @@ export async function GET(req: NextRequest) {
     const db = await getDb();
 
     const filter: Record<string, unknown> = {};
+
+    // Non-owner admins only see their own activity
+    if (payload.role !== "owner") {
+      filter.adminId = new ObjectId(payload.sub);
+    }
+
     if (action && ["create", "update", "delete", "login", "logout"].includes(action)) {
       filter.action = action;
     }

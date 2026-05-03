@@ -39,10 +39,7 @@ const actionColors: Record<string, string> = {
 
 export default function AuditPage() {
   const { fetchWithAuth, admin } = useAdmin();
-
-  if (admin && admin.role !== "owner") {
-    return <div className="p-8 text-center text-white/30 mt-20">Owner access required.</div>;
-  }
+  const isOwner = admin?.role === "owner";
   const { toast } = useToast();
 
   const [logs, setLogs] = useState<AuditEntry[]>([]);
@@ -83,9 +80,9 @@ export default function AuditPage() {
     <div className="p-8">
       <div className="flex items-center justify-between mb-8">
         <div>
-          <h1 className="text-white text-2xl font-bold">Audit Log</h1>
+          <h1 className="text-white text-2xl font-bold">{isOwner ? "Audit Log" : "My Activity"}</h1>
           <p className="text-white/40 text-sm mt-1">
-            {meta.total} total entries
+            {isOwner ? `${meta.total} total entries` : `${meta.total} entries · your actions only`}
           </p>
         </div>
 
@@ -115,7 +112,7 @@ export default function AuditPage() {
           <thead>
             <tr className="border-b border-white/[0.06]">
               <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Action</th>
-              <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Admin</th>
+              {isOwner && <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Admin</th>}
               <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Collection</th>
               <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Details</th>
               <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Timestamp</th>
@@ -125,14 +122,14 @@ export default function AuditPage() {
             {loading ? (
               Array.from({ length: 10 }).map((_, i) => (
                 <tr key={i}>
-                  <td colSpan={5} className="px-5 py-3.5">
+                  <td colSpan={isOwner ? 5 : 4} className="px-5 py-3.5">
                     <div className="h-4 bg-white/5 rounded animate-pulse" />
                   </td>
                 </tr>
               ))
             ) : logs.length === 0 ? (
               <tr>
-                <td colSpan={5} className="px-5 py-12 text-center text-white/25 text-sm">
+                <td colSpan={isOwner ? 5 : 4} className="px-5 py-12 text-center text-white/25 text-sm">
                   No entries found
                 </td>
               </tr>
@@ -144,7 +141,7 @@ export default function AuditPage() {
                       {entry.action}
                     </span>
                   </td>
-                  <td className="px-5 py-3.5 text-white/70 text-sm">{entry.adminName}</td>
+                  {isOwner && <td className="px-5 py-3.5 text-white/70 text-sm">{entry.adminName}</td>}
                   <td className="px-5 py-3.5 text-white/40 text-xs font-mono">{entry.collection}</td>
                   <td className="px-5 py-3.5 text-white/50 text-sm max-w-sm truncate">{entry.details}</td>
                   <td className="px-5 py-3.5 text-white/30 text-xs">

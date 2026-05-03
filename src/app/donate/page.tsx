@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { motion, useInView, AnimatePresence } from "framer-motion";
 import { useLang } from "@/context/LanguageContext";
 import { trackEvent } from "@/hooks/useAnalytics";
-import { ChevronDown, Check, Search, X, Shield, Zap, CalendarDays, HeartHandshake, Users } from "lucide-react";
+import { ChevronDown, Check, Search, X, Shield, Zap, CalendarDays, HeartHandshake, Users, ArrowUpRight } from "lucide-react";
 import Link from "next/link";
 
 /* ─── Types ─────────────────────────────────────────────────────────────── */
@@ -46,13 +46,13 @@ function pct(raised = 0, target = 0) {
 }
 
 /* ─── Progress bar (animates on scroll) ─────────────────────────────────── */
-function ProgressBar({ raised = 0, target = 0, accent }: { raised?: number; target?: number; accent: string }) {
+function ProgressBar({ raised = 0, target = 0, accent, isRTL }: { raised?: number; target?: number; accent: string; isRTL: boolean }) {
   const ref   = useRef<HTMLDivElement>(null);
   const inView = useInView(ref, { once: true });
   const p     = pct(raised, target);
 
   if (!target) return (
-    <p className="text-white/30 text-xs">جمع التبرعات جارية</p>
+    <p className="text-white/30 text-xs">{isRTL ? "جمع التبرعات جارية" : "Fundraising in progress"}</p>
   );
 
   return (
@@ -139,30 +139,91 @@ function CaseCard({
         </p>
 
         {/* Progress */}
-        <ProgressBar raised={c.raisedAmount} target={c.targetAmount} accent={accent} />
+        <ProgressBar raised={c.raisedAmount} target={c.targetAmount} accent={accent} isRTL={isRTL} />
 
-        {/* Story toggle — stop propagation */}
-        <button
+        {/* Story toggle */}
+        <motion.button
           onClick={e => { e.stopPropagation(); setExpanded(v => !v); }}
-          className={`flex items-center gap-1.5 mt-4 text-white/30 hover:text-white/60 text-xs transition-colors ${isRTL ? "flex-row-reverse font-arabic" : ""}`}
+          className={`group relative flex items-center gap-2 mt-5 ${isRTL ? "flex-row-reverse font-arabic" : ""}`}
+          whileTap={{ scale: 0.96 }}
         >
-          <motion.div animate={{ rotate: expanded ? 180 : 0 }} transition={{ duration: 0.25 }}>
+          {/* Pulsing beacon */}
+          <AnimatePresence>
+            {!expanded && (
+              <motion.span
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: [1, 1.6, 1], opacity: [0.6, 1, 0.6] }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+                className="flex-shrink-0 w-1.5 h-1.5 rounded-full"
+                style={{ background: accent }}
+              />
+            )}
+          </AnimatePresence>
+
+          {/* Bouncing chevron */}
+          <motion.div
+            animate={expanded
+              ? { rotate: 180, y: 0 }
+              : { rotate: 0, y: [0, 2.5, 0] }
+            }
+            transition={expanded
+              ? { duration: 0.3, ease: "easeInOut" }
+              : { duration: 1.6, repeat: Infinity, ease: "easeInOut" }
+            }
+            style={{ color: expanded ? `${accent}99` : "rgba(255,255,255,0.35)" }}
+          >
             <ChevronDown size={13} />
           </motion.div>
-          <span>{isRTL ? "اقرأ القصة" : "Read the story"}</span>
-        </button>
+
+          {/* Text with shimmer */}
+          <span className="relative overflow-hidden text-xs">
+            <AnimatePresence mode="wait">
+              <motion.span
+                key={expanded ? "hide" : "read"}
+                initial={{ opacity: 0, y: expanded ? -6 : 6 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: expanded ? 6 : -6 }}
+                transition={{ duration: 0.2 }}
+                className="block"
+                style={{ color: expanded ? `${accent}80` : "rgba(255,255,255,0.38)" }}
+              >
+                {expanded
+                  ? (isRTL ? "أخفِ القصة" : "Hide story")
+                  : (isRTL ? "اقرأ القصة" : "Read the story")}
+              </motion.span>
+            </AnimatePresence>
+
+            {/* Underline that grows on hover */}
+            <motion.span
+              className="absolute bottom-0 left-0 h-px"
+              style={{ background: accent }}
+              initial={{ scaleX: 0, originX: isRTL ? 1 : 0 }}
+              whileHover={{ scaleX: 1 }}
+              transition={{ duration: 0.3 }}
+            />
+          </span>
+        </motion.button>
 
         <AnimatePresence>
           {expanded && (
-            <motion.p
+            <motion.div
               initial={{ height: 0, opacity: 0 }}
               animate={{ height: "auto", opacity: 1 }}
               exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.3 }}
-              className={`overflow-hidden text-white/55 text-sm leading-relaxed mt-2 border-t border-white/[0.05] pt-3 ${isRTL ? "text-right font-arabic" : "text-left"}`}
+              transition={{ duration: 0.35, ease: "easeInOut" }}
+              className="overflow-hidden"
             >
-              {content.story}
-            </motion.p>
+              <motion.p
+                initial={{ y: 8 }}
+                animate={{ y: 0 }}
+                transition={{ duration: 0.3, delay: 0.1 }}
+                className={`text-white/55 text-sm leading-relaxed mt-3 border-t pt-3 ${isRTL ? "text-right font-arabic" : "text-left"}`}
+                style={{ borderColor: `${accent}20` }}
+              >
+                {content.story}
+              </motion.p>
+            </motion.div>
           )}
         </AnimatePresence>
       </div>
@@ -172,7 +233,7 @@ function CaseCard({
 
 /* ─── Main page ─────────────────────────────────────────────────────────── */
 export default function DonatePage() {
-  const { isRTL, t } = useLang();
+  const { isRTL, t, lang, setLang } = useLang();
 
   const [categories, setCategories]     = useState<Category[]>([]);
   const [loading, setLoading]           = useState(true);
@@ -183,6 +244,7 @@ export default function DonatePage() {
   const [customAmount, setCustomAmount]     = useState("");
   const [caseInput, setCaseInput]           = useState("");
   const [inputError, setInputError]         = useState(false);
+  const [formCat, setFormCat]               = useState("");
 
   const PER_PAGE = 4;
   const formRef  = useRef<HTMLDivElement>(null);
@@ -220,6 +282,8 @@ export default function DonatePage() {
     setSelectedCase(c);
     setCaseInput(c.number);
     setInputError(false);
+    const cat = categories.find(cat => cat._id === c.categoryId);
+    if (cat) setFormCat(cat.slug);
     trackEvent("case_select", { caseNumber: c.number, caseName: isRTL ? c.ar.name : c.en.name });
     formRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   }
@@ -229,8 +293,11 @@ export default function DonatePage() {
     setInputError(false);
     if (!val.trim()) { setSelectedCase(null); return; }
     const found = caseIndex[val.trim().padStart(3, "0")];
-    if (found) setSelectedCase(found);
-    else if (val.length >= 3) { setSelectedCase(null); setInputError(true); }
+    if (found) {
+      setSelectedCase(found);
+      const cat = categories.find(cat => cat._id === found.categoryId);
+      if (cat) setFormCat(cat.slug);
+    } else if (val.length >= 3) { setSelectedCase(null); setInputError(true); }
   }
 
   function buildWhatsAppUrl() {
@@ -238,9 +305,15 @@ export default function DonatePage() {
       ? (customAmount ? `${customAmount} ${isRTL ? "جنيه" : "EGP"}` : (isRTL ? "مبلغ غير محدد" : "Not specified"))
       : (AMOUNTS.find(a => a.key === selectedAmount)?.[isRTL ? "ar" : "en"] ?? selectedAmount);
 
+    const catLabel = formCat
+      ? categories.find(c => c.slug === formCat)?.[isRTL ? "ar" : "en"].label ?? ""
+      : "";
+
     const dest = selectedCase
       ? `#${selectedCase.number} - ${isRTL ? selectedCase.ar.name : selectedCase.en.name}`
-      : (isRTL ? "الأولوية الأشد إلحاحًا" : "Most urgent priority");
+      : catLabel
+        ? (isRTL ? `تصنيف: ${catLabel}` : `Category: ${catLabel}`)
+        : (isRTL ? "الأولوية الأشد إلحاحًا" : "Most urgent priority");
 
     const responsible = selectedCase?.responsibleAdminName
       ? (isRTL ? `\n- المسؤول: ${selectedCase.responsibleAdminName}` : `\n- Handler: ${selectedCase.responsibleAdminName}`)
@@ -268,9 +341,17 @@ export default function DonatePage() {
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img src="/logo.png" alt="قيمة" className="h-8 w-auto opacity-90 hover:opacity-100 transition-opacity" />
           </Link>
-          <Link href="/" className={`text-white/40 hover:text-white text-sm transition-colors ${isRTL ? "font-arabic" : ""}`}>
-            {isRTL ? "← العودة للرئيسية" : "← Back to home"}
-          </Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setLang(lang === "ar" ? "en" : "ar")}
+              className="text-xs border border-white/20 text-white/70 hover:border-gold/60 hover:text-gold px-3 py-1.5 rounded-full transition-all"
+            >
+              {lang === "ar" ? "EN" : "عربي"}
+            </button>
+            <Link href="/" className={`text-white/40 hover:text-white text-sm transition-colors ${isRTL ? "font-arabic" : ""}`}>
+              {isRTL ? "→ العودة للرئيسية" : "← Back to home"}
+            </Link>
+          </div>
         </div>
       </nav>
 
@@ -405,6 +486,33 @@ export default function DonatePage() {
           </>
         )}
 
+        {/* ── Trust banner ──────────────────────────────────────────────── */}
+        <div className="max-w-lg mx-auto mb-6">
+          <a
+            href="https://wa.me/201039091390"
+            target="_blank"
+            rel="noopener noreferrer"
+            className={`group flex items-center gap-3.5 w-full rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] hover:border-emerald-500/35 transition-all duration-300 px-5 py-4 ${isRTL ? "flex-row-reverse font-arabic" : ""}`}
+          >
+            <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+              <Shield size={15} />
+            </div>
+            <div className={`flex-1 min-w-0 ${isRTL ? "text-right" : "text-left"}`}>
+              <p className="text-emerald-400 text-xs font-bold mb-0.5">
+                {isRTL ? "جميع الحالات موثقة ومتحقق منها" : "All cases are verified & documented"}
+              </p>
+              <p className="text-white/35 text-xs leading-relaxed">
+                {isRTL
+                  ? "يسعدنا تزويدك بأي إثبات تريده - فقط اسألنا عند التواصل على واتساب"
+                  : "Happy to share any proof you need - just ask when you chat with us on WhatsApp"}
+              </p>
+            </div>
+            <div className={`flex-shrink-0 text-emerald-500/40 group-hover:text-emerald-400 transition-colors ${isRTL ? "rotate-180" : ""}`}>
+              <ArrowUpRight size={14} />
+            </div>
+          </a>
+        </div>
+
         {/* ── Donation form ─────────────────────────────────────────────── */}
         <div ref={formRef} className="max-w-lg mx-auto">
           <div className="rounded-3xl border border-white/[0.08] bg-white/[0.02] p-7 overflow-hidden relative">
@@ -414,6 +522,35 @@ export default function DonatePage() {
               <h2 className={`text-white font-bold text-lg mb-5 ${isRTL ? "text-right" : "text-left"}`}>
                 {isRTL ? "أكمل تبرعك" : "Complete your donation"}
               </h2>
+
+              {/* Category pills */}
+              <p className={`text-white/40 text-xs mb-2 ${isRTL ? "text-right" : "text-left"}`}>
+                {isRTL ? "التصنيف" : "Category"}
+              </p>
+              <div className={`flex flex-wrap gap-2 mb-4 ${isRTL ? "flex-row-reverse" : ""}`}>
+                {categories.map((cat, i) => {
+                  const active = formCat === cat.slug;
+                  const color  = ACCENT[i % ACCENT.length];
+                  return (
+                    <button
+                      key={cat.slug}
+                      onClick={() => {
+                        setFormCat(active ? "" : cat.slug);
+                        if (!active) { setSelectedCase(null); setCaseInput(""); setInputError(false); }
+                      }}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                        active ? "text-black border-transparent" : "border-white/10 text-white/45 hover:border-white/20 hover:text-white/70"
+                      }`}
+                      style={active ? { background: color, borderColor: color } : {}}
+                    >
+                      {CAT_ICONS[cat.slug] ?? null}
+                      <span>{isRTL ? cat.ar.label : cat.en.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              <div className="h-px bg-white/[0.06] mb-4" />
 
               {/* Case input */}
               <p className={`text-white/40 text-xs mb-2 ${isRTL ? "text-right" : "text-left"}`}>

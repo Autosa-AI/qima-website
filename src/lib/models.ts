@@ -51,6 +51,11 @@ export interface DonateCase {
   responsibleAdminName?: string;
   targetAmount?: number;   // fundraising goal in EGP
   raisedAmount?: number;   // amount raised so far, updated by admin
+  beneficiary?: {          // optional private info about the person receiving aid
+    name?: string;
+    phone?: string;
+    proofImageUrl?: string;
+  };
   createdBy: ObjectId;
   createdAt: Date;
   updatedAt: Date;

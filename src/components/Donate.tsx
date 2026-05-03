@@ -203,6 +203,34 @@ export default function Donate() {
           </div>
         </motion.div>
 
+        {/* ── Trust banner ── */}
+        <motion.a
+          href="https://wa.me/201039091390"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0, y: 16 }}
+          animate={inView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.7, delay: 0.28 }}
+          className={`group mt-4 flex items-center gap-3.5 w-full rounded-2xl border border-emerald-500/20 bg-emerald-500/[0.04] hover:bg-emerald-500/[0.08] hover:border-emerald-500/35 transition-all duration-300 px-5 py-4 ${isRTL ? "flex-row-reverse font-arabic" : ""}`}
+        >
+          <div className="flex-shrink-0 w-8 h-8 rounded-xl bg-emerald-500/15 border border-emerald-500/25 flex items-center justify-center text-emerald-400">
+            <Shield size={15} />
+          </div>
+          <div className={`flex-1 min-w-0 ${isRTL ? "text-right" : "text-left"}`}>
+            <p className="text-emerald-400 text-xs font-bold mb-0.5">
+              {isRTL ? "جميع الحالات موثقة ومتحقق منها" : "All cases are verified & documented"}
+            </p>
+            <p className="text-white/35 text-xs leading-relaxed">
+              {isRTL
+                ? "يسعدنا تزويدك بأي إثبات تريده — فقط اسألنا عند التواصل على واتساب"
+                : "Happy to share any proof you need — just ask when you chat with us on WhatsApp"}
+            </p>
+          </div>
+          <div className={`flex-shrink-0 text-emerald-500/40 group-hover:text-emerald-400 transition-colors ${isRTL ? "rotate-180" : ""}`}>
+            <ArrowUpRight size={14} />
+          </div>
+        </motion.a>
+
         {/* ── Big "all cases" button ── */}
         <motion.a
           href="/donate"

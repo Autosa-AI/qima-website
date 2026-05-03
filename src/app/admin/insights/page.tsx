@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useAdmin } from "@/components/admin/AdminContext";
-import { TrendingUp, MousePointerClick, Users, HeartHandshake, RefreshCw } from "lucide-react";
+import { TrendingUp, MousePointerClick, Users, HeartHandshake, RefreshCw, Banknote } from "lucide-react";
 
 interface Summary {
   totals: { all: number; month: number; week: number };
@@ -11,6 +11,12 @@ interface Summary {
   topAmounts: { _id: string; count: number }[];
   dailyActivity: { _id: { y: number; m: number; d: number }; count: number }[];
   recent: { _id: string; event: string; meta?: Record<string, string>; timestamp: string }[];
+}
+
+interface DonationStats {
+  totalRaised: number;
+  totalTarget: number;
+  byCategory: { slug: string; label: string; raised: number; target: number; cases: number }[];
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -46,20 +52,99 @@ function MiniBar({ label, count, max, accent = "#C9A84C" }: { label: string; cou
   );
 }
 
+function CategoryFundRow({ label, raised, target, cases }: { label: string; raised: number; target: number; cases: number }) {
+  const pct = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : null;
+  const fmt = (n: number) => n >= 1_000_000
+    ? `${(n / 1_000_000).toFixed(1)}M`
+    : n >= 1_000 ? `${(n / 1_000).toFixed(1)}K` : String(n);
+  return (
+    <div className="py-3 border-b border-white/[0.04] last:border-0">
+      <div className="flex items-center justify-between mb-1.5">
+        <div className="flex items-center gap-2">
+          <span className="text-white/80 text-sm font-medium">{label}</span>
+          <span className="text-white/25 text-xs">{cases} case{cases !== 1 ? "s" : ""}</span>
+        </div>
+        <div className="flex items-center gap-2 text-xs">
+          <span className="text-[#C9A84C] font-bold tabular-nums">{fmt(raised)} EGP</span>
+          {target > 0 && <span className="text-white/25">/ {fmt(target)}</span>}
+        </div>
+      </div>
+      {pct !== null ? (
+        <div className="flex items-center gap-2">
+          <div className="flex-1 h-1.5 bg-white/[0.05] rounded-full overflow-hidden">
+            <div
+              className="h-full rounded-full transition-all duration-700"
+              style={{ width: `${Math.max(2, pct)}%`, background: pct >= 100 ? "#34D399" : "#C9A84C" }}
+            />
+          </div>
+          <span className="text-xs tabular-nums font-semibold w-9 text-right" style={{ color: pct >= 100 ? "#34D399" : "#C9A84C" }}>
+            {pct}%
+          </span>
+        </div>
+      ) : (
+        <p className="text-white/20 text-xs">No target set</p>
+      )}
+    </div>
+  );
+}
+
 export default function InsightsPage() {
   const { fetchWithAuth, admin } = useAdmin();
-  const [data, setData]         = useState<Summary | null>(null);
-  const [loading, setLoading]   = useState(true);
-  const [error, setError]       = useState("");
+  const [data, setData]               = useState<Summary | null>(null);
+  const [donationStats, setDonationStats] = useState<DonationStats | null>(null);
+  const [loading, setLoading]         = useState(true);
+  const [error, setError]             = useState("");
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const res  = await fetchWithAuth("/api/analytics");
-      const json = await res.json();
-      if (!json.success) throw new Error(json.error ?? "Failed to load");
-      setData(json.data);
+      const [analyticsRes, casesRes, catsRes] = await Promise.all([
+        fetchWithAuth("/api/analytics"),
+        fetchWithAuth("/api/cases"),
+        fetchWithAuth("/api/categories"),
+      ]);
+      const [analyticsJson, casesJson, catsJson] = await Promise.all([
+        analyticsRes.json(), casesRes.json(), catsRes.json(),
+      ]);
+
+      if (!analyticsJson.success) throw new Error(analyticsJson.error ?? "Failed to load");
+      setData(analyticsJson.data);
+
+      if (casesJson.success && catsJson.success) {
+        const cases: { categoryId: string; raisedAmount?: number; targetAmount?: number }[] = casesJson.data ?? [];
+        const cats:  { _id: string; slug: string; ar: { label: string }; en: { label: string } }[] = catsJson.data ?? [];
+
+        let totalRaised = 0;
+        let totalTarget = 0;
+        const catMap: Record<string, { raised: number; target: number; cases: number }> = {};
+
+        cats.forEach(c => { catMap[c._id] = { raised: 0, target: 0, cases: 0 }; });
+
+        cases.forEach(c => {
+          const r = c.raisedAmount ?? 0;
+          const t = c.targetAmount ?? 0;
+          totalRaised += r;
+          totalTarget += t;
+          if (catMap[c.categoryId]) {
+            catMap[c.categoryId].raised += r;
+            catMap[c.categoryId].target += t;
+            catMap[c.categoryId].cases  += 1;
+          }
+        });
+
+        setDonationStats({
+          totalRaised,
+          totalTarget,
+          byCategory: cats.map(c => ({
+            slug:   c.slug,
+            label:  c.en.label,
+            raised: catMap[c._id]?.raised ?? 0,
+            target: catMap[c._id]?.target ?? 0,
+            cases:  catMap[c._id]?.cases  ?? 0,
+          })).filter(c => c.cases > 0),
+        });
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
@@ -100,6 +185,46 @@ export default function InsightsPage() {
         </div>
       ) : data ? (
         <>
+          {/* ── Fundraising stats ─────────────────────────────────────── */}
+          {donationStats && (
+            <div className="mb-8">
+              <h2 className="text-white/40 text-xs font-medium uppercase tracking-widest mb-4">Fundraising Progress</h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
+                <StatCard
+                  label="Total Raised"
+                  value={`${(donationStats.totalRaised).toLocaleString()} EGP`}
+                  sub="Across all active cases"
+                  icon={<Banknote size={16} />}
+                />
+                <StatCard
+                  label="Total Target"
+                  value={`${(donationStats.totalTarget).toLocaleString()} EGP`}
+                  sub="Sum of all case goals"
+                  icon={<TrendingUp size={16} />}
+                />
+                <StatCard
+                  label="Overall Progress"
+                  value={donationStats.totalTarget > 0
+                    ? `${Math.min(100, Math.round((donationStats.totalRaised / donationStats.totalTarget) * 100))}%`
+                    : "—"}
+                  sub={donationStats.byCategory.filter(c => c.target > 0 && c.raised >= c.target).length + " categor" + (donationStats.byCategory.filter(c => c.target > 0 && c.raised >= c.target).length === 1 ? "y" : "ies") + " fully funded"}
+                  icon={<HeartHandshake size={16} />}
+                />
+              </div>
+
+              <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5">
+                <h3 className="text-white/60 text-xs font-medium mb-4 uppercase tracking-widest">By Category</h3>
+                {donationStats.byCategory.length === 0 ? (
+                  <p className="text-white/20 text-sm text-center py-6">No cases with amounts yet</p>
+                ) : (
+                  donationStats.byCategory.map(c => (
+                    <CategoryFundRow key={c.slug} label={c.label} raised={c.raised} target={c.target} cases={c.cases} />
+                  ))
+                )}
+              </div>
+            </div>
+          )}
+
           {/* ── KPI row ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <StatCard

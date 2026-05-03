@@ -22,6 +22,18 @@ const LinkedinIcon = () => (
   </svg>
 );
 
+const FacebookIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+    <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.41c0-3.025 1.792-4.697 4.533-4.697 1.312 0 2.686.236 2.686.236v2.97h-1.513c-1.491 0-1.956.93-1.956 1.886v2.267h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z"/>
+  </svg>
+);
+
+const TikTokIcon = () => (
+  <svg width="15" height="15" viewBox="0 0 448 512" fill="currentColor">
+    <path d="M448 209.9a210.1 210.1 0 0 1 -122.8-39.3V349.4A162.6 162.6 0 1 1 185 188.3V278.2a74.6 74.6 0 1 0 52.2 71.2V0l88 0a121.2 121.2 0 0 0 1.9 22.2h0A122.2 122.2 0 0 0 381 102.4a121.4 121.4 0 0 0 67 20.1z"/>
+  </svg>
+);
+
 export default function Contact() {
   const { t, isRTL } = useLang();
   const ref = useRef(null);
@@ -32,9 +44,12 @@ export default function Contact() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const subject = encodeURIComponent(`رسالة من موقع قيمة — ${name}`);
-    const body    = encodeURIComponent(`الاسم: ${name}\nالإيميل: ${email}\n\n${message}`);
-    window.open(`mailto:qima.charity@gmail.com?subject=${subject}&body=${body}`, "_self");
+    const text = encodeURIComponent(
+      isRTL
+        ? `السلام عليكم فريق قيمة،\n\nالاسم: ${name}\nالإيميل: ${email}\n\n${message}`
+        : `Hello Qima team,\n\nName: ${name}\nEmail: ${email}\n\n${message}`
+    );
+    window.open(`https://wa.me/201039091390?text=${text}`, "_blank");
   };
 
   return (
@@ -107,27 +122,29 @@ export default function Contact() {
           >
             <p className="text-white/40 text-sm mb-8">{t("contact_or")}</p>
 
-            <div className="space-y-4 w-full">
+            <div className="space-y-2 w-full">
               {([
-                { icon: <Mail size={16} />, label: "qima.charity@gmail.com", href: "mailto:qima.charity@gmail.com", color: "#C9A84C" },
-                { icon: <InstagramIcon />, label: "@qima.egypt", href: "https://www.instagram.com/qima.egypt/", color: "#E1306C" },
-                { icon: <YoutubeIcon />, label: "Qima Egypt", href: "https://www.youtube.com/@qima-egypt", color: "#FF0000" },
-                { icon: <LinkedinIcon />, label: "qima-egypt", href: "https://www.linkedin.com/company/qima-egypt", color: "#0A66C2" },
+                { icon: <Mail size={14} />,    label: "qima.charity@gmail.com", href: "mailto:qima.charity@gmail.com",                            color: "#C9A84C" },
+                { icon: <InstagramIcon />,     label: "@qima.egypt",            href: "https://www.instagram.com/qima.egypt/",                    color: "#E1306C" },
+                { icon: <YoutubeIcon />,       label: "Qima Egypt",             href: "https://www.youtube.com/@qima-egypt",                      color: "#FF0000" },
+                { icon: <FacebookIcon />,      label: "Qima",                   href: "https://www.facebook.com/profile.php?id=61588880265644",   color: "#1877F2" },
+                { icon: <TikTokIcon />,        label: "@qima.charity",          href: "https://www.tiktok.com/@qima.charity",                     color: "#69C9D0" },
+                { icon: <LinkedinIcon />,      label: "qima-egypt",             href: "https://www.linkedin.com/company/qima-egypt",             color: "#0A66C2" },
               ]).map(({ icon, label, href, color }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`flex items-center gap-4 group p-3 rounded-xl border border-white/[0.05] hover:border-white/10 hover:bg-white/[0.03] transition-all ${isRTL ? "flex-row-reverse" : ""}`}
+                  className={`flex items-center gap-3 group px-2.5 py-2 rounded-lg border border-white/[0.05] hover:border-white/10 hover:bg-white/[0.03] transition-all ${isRTL ? "flex-row-reverse" : ""}`}
                 >
                   <div
-                    className="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
+                    className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
                     style={{ background: `${color}20`, border: `1px solid ${color}40`, color }}
                   >
                     {icon}
                   </div>
-                  <span className="text-white/60 group-hover:text-white/90 text-sm transition-colors">
+                  <span className="text-white/60 group-hover:text-white/90 text-xs transition-colors">
                     {label}
                   </span>
                 </a>

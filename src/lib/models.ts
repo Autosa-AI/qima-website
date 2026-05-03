@@ -74,6 +74,18 @@ export interface ImpactStory {
   updatedAt: Date;
 }
 
+export interface DonationRecord {
+  _id: ObjectId;
+  caseId: ObjectId;
+  caseNumber: string;
+  caseName: string;        // Arabic name at time of record
+  categoryId: ObjectId;
+  amount: number;          // positive delta only (never 0 or negative)
+  adminId: ObjectId;
+  adminName: string;
+  timestamp: Date;
+}
+
 export interface AuditLog {
   _id: ObjectId;
   adminId: ObjectId;

@@ -1,7 +1,7 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
 import { useAdmin } from "@/components/admin/AdminContext";
-import { TrendingUp, MousePointerClick, Users, HeartHandshake, RefreshCw, Banknote } from "lucide-react";
+import { TrendingUp, MousePointerClick, Users, HeartHandshake, RefreshCw, Banknote, Trash2 } from "lucide-react";
 
 interface Summary {
   totals: { all: number; month: number; week: number };
@@ -17,6 +17,12 @@ interface DonationStats {
   totalRaised: number;
   totalTarget: number;
   byCategory: { slug: string; label: string; raised: number; target: number; cases: number }[];
+}
+
+interface DonationHistory {
+  totals: { all: number; month: number; week: number; day: number };
+  byCategory: { categoryId: string; label: string; total: number; count: number }[];
+  topCases: { caseId: string; caseNumber: string; caseName: string; total: number; count: number }[];
 }
 
 const EVENT_LABELS: Record<string, string> = {
@@ -94,18 +100,25 @@ export default function InsightsPage() {
   const [donationStats, setDonationStats] = useState<DonationStats | null>(null);
   const [loading, setLoading]         = useState(true);
   const [error, setError]             = useState("");
+  const [showResetAnalytics, setShowResetAnalytics] = useState(false);
+  const [resettingAnalytics, setResettingAnalytics] = useState(false);
+  const [donationHistory, setDonationHistory]       = useState<DonationHistory | null>(null);
+  const [historyPeriod, setHistoryPeriod]           = useState<"day" | "week" | "month" | "all">("all");
+  const [showResetHistory, setShowResetHistory]     = useState(false);
+  const [resettingHistory, setResettingHistory]     = useState(false);
 
   const load = useCallback(async () => {
     setLoading(true);
     setError("");
     try {
-      const [analyticsRes, casesRes, catsRes] = await Promise.all([
+      const [analyticsRes, casesRes, catsRes, donationsRes] = await Promise.all([
         fetchWithAuth("/api/analytics"),
         fetchWithAuth("/api/cases"),
         fetchWithAuth("/api/categories"),
+        fetchWithAuth("/api/donations"),
       ]);
-      const [analyticsJson, casesJson, catsJson] = await Promise.all([
-        analyticsRes.json(), casesRes.json(), catsRes.json(),
+      const [analyticsJson, casesJson, catsJson, donationsJson] = await Promise.all([
+        analyticsRes.json(), casesRes.json(), catsRes.json(), donationsRes.json(),
       ]);
 
       if (!analyticsJson.success) throw new Error(analyticsJson.error ?? "Failed to load");
@@ -145,12 +158,49 @@ export default function InsightsPage() {
           })).filter(c => c.cases > 0),
         });
       }
+
+      if (donationsJson.success) {
+        setDonationHistory(donationsJson.data);
+      }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Error");
     } finally {
       setLoading(false);
     }
   }, [fetchWithAuth]);
+
+  async function handleResetAnalytics() {
+    setResettingAnalytics(true);
+    try {
+      const res  = await fetchWithAuth("/api/analytics", { method: "DELETE" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setData(null);
+      setDonationStats(null);
+      setShowResetAnalytics(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setResettingAnalytics(false);
+    }
+  }
+
+  async function handleResetHistory() {
+    setResettingHistory(true);
+    try {
+      const res  = await fetchWithAuth("/api/donations", { method: "DELETE" });
+      const json = await res.json();
+      if (!json.success) throw new Error(json.error);
+      setDonationHistory(null);
+      setShowResetHistory(false);
+      await load();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Reset failed");
+    } finally {
+      setResettingHistory(false);
+    }
+  }
 
   useEffect(() => { if (admin?.role === "owner") load(); }, [load, admin]);
 
@@ -165,14 +215,24 @@ export default function InsightsPage() {
           <h1 className="text-white text-2xl font-bold">Insights</h1>
           <p className="text-white/40 text-sm mt-1">Cumulative visitor & interaction analytics</p>
         </div>
-        <button
-          onClick={load}
-          disabled={loading}
-          className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-white/50 border border-white/10 hover:border-white/20 hover:text-white transition-all disabled:opacity-40"
-        >
-          <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
-          Refresh
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowResetAnalytics(true)}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-red-400/60 border border-red-500/20 hover:border-red-500/40 hover:text-red-400 transition-all disabled:opacity-40"
+          >
+            <Trash2 size={14} />
+            Reset Analytics
+          </button>
+          <button
+            onClick={load}
+            disabled={loading}
+            className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm text-white/50 border border-white/10 hover:border-white/20 hover:text-white transition-all disabled:opacity-40"
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            Refresh
+          </button>
+        </div>
       </div>
 
       {error && (
@@ -224,6 +284,114 @@ export default function InsightsPage() {
               </div>
             </div>
           )}
+
+          {/* ── Donation History ─────────────────────────────────────── */}
+          <div className="mb-8">
+            <div className="flex items-center justify-between mb-4">
+              <div>
+                <h2 className="text-white/40 text-xs font-medium uppercase tracking-widest">Donation History</h2>
+                <p className="text-white/20 text-xs mt-0.5">Cumulative log — unaffected by progress resets</p>
+              </div>
+              <button
+                onClick={() => setShowResetHistory(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs text-red-400/50 border border-red-500/15 hover:border-red-500/35 hover:text-red-400 transition-all"
+              >
+                <Trash2 size={12} />
+                Reset History
+              </button>
+            </div>
+
+            {/* Period filter */}
+            <div className="flex gap-1.5 mb-5">
+              {([
+                { key: "day",   label: "Today" },
+                { key: "week",  label: "Last 7 days" },
+                { key: "month", label: "Last 30 days" },
+                { key: "all",   label: "All time" },
+              ] as const).map(p => (
+                <button
+                  key={p.key}
+                  onClick={() => setHistoryPeriod(p.key)}
+                  className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-all ${
+                    historyPeriod === p.key
+                      ? "bg-[#C9A84C]/15 border-[#C9A84C]/40 text-[#C9A84C]"
+                      : "border-white/10 text-white/40 hover:border-white/20 hover:text-white"
+                  }`}
+                >
+                  {p.label}
+                </button>
+              ))}
+            </div>
+
+            {donationHistory ? (
+              <div className="grid md:grid-cols-3 gap-5">
+                {/* Big total */}
+                <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5 flex flex-col justify-between">
+                  <p className="text-white/40 text-xs font-medium mb-2">
+                    {{ day: "Today", week: "Last 7 days", month: "Last 30 days", all: "All time" }[historyPeriod]}
+                  </p>
+                  <div>
+                    <p className="text-white text-4xl font-bold tabular-nums leading-none">
+                      {(donationHistory.totals[historyPeriod]).toLocaleString()}
+                    </p>
+                    <p className="text-white/30 text-xs mt-1">EGP raised</p>
+                  </div>
+                  <div className="mt-4 pt-4 border-t border-white/[0.05] grid grid-cols-3 gap-2 text-center">
+                    {(["day", "week", "month"] as const).map(k => (
+                      <div key={k}>
+                        <p className="text-white/60 text-sm font-bold tabular-nums">{(donationHistory.totals[k]).toLocaleString()}</p>
+                        <p className="text-white/25 text-[10px]">{{ day: "Today", week: "7d", month: "30d" }[k]}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* By category */}
+                <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5">
+                  <h3 className="text-white/60 text-xs font-medium mb-4 uppercase tracking-widest">By Category</h3>
+                  {donationHistory.byCategory.length === 0 ? (
+                    <p className="text-white/20 text-sm text-center py-6">No records yet</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {donationHistory.byCategory.map(c => (
+                        <MiniBar
+                          key={c.categoryId}
+                          label={c.label}
+                          count={c.total}
+                          max={donationHistory.byCategory[0]?.total ?? 1}
+                          accent="#C9A84C"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Top cases */}
+                <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5">
+                  <h3 className="text-white/60 text-xs font-medium mb-4 uppercase tracking-widest">Top Cases (all time)</h3>
+                  {donationHistory.topCases.length === 0 ? (
+                    <p className="text-white/20 text-sm text-center py-6">No records yet</p>
+                  ) : (
+                    <div className="space-y-1">
+                      {donationHistory.topCases.map(c => (
+                        <MiniBar
+                          key={c.caseId}
+                          label={`#${c.caseNumber} · ${c.caseName}`}
+                          count={c.total}
+                          max={donationHistory.topCases[0]?.total ?? 1}
+                          accent="#A78BFA"
+                        />
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-8 text-center text-white/20 text-sm">
+                No donation records yet. History is logged when raisedAmount is updated on a case.
+              </div>
+            )}
+          </div>
 
           {/* ── KPI row ───────────────────────────────────────────────── */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
@@ -407,6 +575,60 @@ export default function InsightsPage() {
           </div>
         </>
       ) : null}
+
+      {showResetHistory && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowResetHistory(false)} />
+          <div className="relative z-10 w-full max-w-sm bg-[#141414] border border-red-500/20 rounded-3xl p-6">
+            <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+              <Trash2 size={18} className="text-red-400" />
+            </div>
+            <h3 className="text-white font-bold mb-1">Reset Donation History?</h3>
+            <p className="text-white/40 text-sm mb-6 leading-relaxed">
+              This clears the cumulative donation log. Case progress bars and all other data are <span className="text-white/70">not affected</span>.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowResetHistory(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 bg-white/5 hover:bg-white/10 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleResetHistory}
+                disabled={resettingHistory}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-red-500/80 text-white hover:bg-red-500 disabled:opacity-50 transition-colors"
+              >
+                {resettingHistory ? "Clearing…" : "Yes, Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {showResetAnalytics && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowResetAnalytics(false)} />
+          <div className="relative z-10 w-full max-w-sm bg-[#141414] border border-red-500/20 rounded-3xl p-6">
+            <div className="w-10 h-10 rounded-2xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-4">
+              <Trash2 size={18} className="text-red-400" />
+            </div>
+            <h3 className="text-white font-bold mb-1">Reset Analytics?</h3>
+            <p className="text-white/40 text-sm mb-6 leading-relaxed">
+              This permanently deletes all visitor events and interaction tracking. Fundraising data and cases are <span className="text-white/70">not affected</span>.
+            </p>
+            <div className="flex gap-3">
+              <button onClick={() => setShowResetAnalytics(false)} className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-white/50 bg-white/5 hover:bg-white/10 transition-colors">
+                Cancel
+              </button>
+              <button
+                onClick={handleResetAnalytics}
+                disabled={resettingAnalytics}
+                className="flex-1 px-4 py-2.5 rounded-xl text-sm font-bold bg-red-500/80 text-white hover:bg-red-500 disabled:opacity-50 transition-colors"
+              >
+                {resettingAnalytics ? "Clearing…" : "Yes, Reset"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

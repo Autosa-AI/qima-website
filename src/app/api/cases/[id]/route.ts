@@ -5,6 +5,26 @@ import { logAction } from "@/lib/auditLog";
 import { ObjectId } from "mongodb";
 import type { DonateCase } from "@/lib/models";
 
+async function recordDonationDelta(
+  db: Awaited<ReturnType<typeof import("@/lib/mongodb").getDb>>,
+  c: DonateCase,
+  newRaisedAmount: number,
+  payload: { sub: string; name: string }
+) {
+  const delta = newRaisedAmount - (c.raisedAmount ?? 0);
+  if (delta <= 0) return;
+  await db.collection("donation_records").insertOne({
+    caseId:     c._id,
+    caseNumber: c.number,
+    caseName:   c.ar.name,
+    categoryId: c.categoryId,
+    amount:     delta,
+    adminId:    new ObjectId(payload.sub),
+    adminName:  payload.name,
+    timestamp:  new Date(),
+  });
+}
+
 export async function PUT(
   req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
@@ -105,7 +125,10 @@ export async function PUT(
     if (typeof isActive     === "boolean") updates.isActive     = isActive;
     if (typeof isUrgent     === "boolean") updates.isUrgent     = isUrgent;
     if (typeof targetAmount === "number" && targetAmount >= 0)  updates.targetAmount = targetAmount;
-    if (typeof raisedAmount === "number" && raisedAmount >= 0)  updates.raisedAmount = raisedAmount;
+    if (typeof raisedAmount === "number" && raisedAmount >= 0) {
+      updates.raisedAmount = raisedAmount;
+      await recordDonationDelta(db, existing, raisedAmount, payload);
+    }
     if (beneficiary === null) {
       updates.beneficiary = undefined;
     } else if (beneficiary) {
@@ -257,7 +280,7 @@ export async function PATCH(
 
     const existingForPatch = await db
       .collection<DonateCase>("donate_cases")
-      .findOne({ _id: caseId }, { projection: { responsibleAdminId: 1 } });
+      .findOne({ _id: caseId }, { projection: { responsibleAdminId: 1, raisedAmount: 1, number: 1, ar: 1, categoryId: 1 } });
     if (!existingForPatch) {
       return NextResponse.json({ success: false, error: "Case not found" }, { status: 404 });
     }
@@ -268,7 +291,10 @@ export async function PATCH(
     const updates: Partial<DonateCase> = { updatedAt: new Date() };
     if (typeof body.isUrgent     === "boolean") updates.isUrgent     = body.isUrgent;
     if (typeof body.isActive     === "boolean") updates.isActive     = body.isActive;
-    if (typeof body.raisedAmount === "number" && body.raisedAmount >= 0) updates.raisedAmount = body.raisedAmount;
+    if (typeof body.raisedAmount === "number" && body.raisedAmount >= 0) {
+      updates.raisedAmount = body.raisedAmount;
+      await recordDonationDelta(db, existingForPatch, body.raisedAmount, payload);
+    }
     if (typeof body.targetAmount === "number" && body.targetAmount >= 0) updates.targetAmount = body.targetAmount;
 
     await db

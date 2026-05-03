@@ -78,10 +78,10 @@ function ProgressBar({ raised = 0, target = 0, accent, isRTL }: { raised?: numbe
 
 /* ─── Case card ─────────────────────────────────────────────────────────── */
 function CaseCard({
-  c, accent, isRTL, isSelected, onSelect,
+  c, accent, isRTL, isSelected, onSelect, isComplete,
 }: {
   c: Case; accent: string; isRTL: boolean;
-  isSelected: boolean; onSelect: (c: Case) => void;
+  isSelected: boolean; onSelect: (c: Case) => void; isComplete: boolean;
 }) {
   const [expanded, setExpanded] = useState(false);
   const content = isRTL ? c.ar : c.en;
@@ -94,11 +94,13 @@ function CaseCard({
       initial={{ opacity: 0, y: 24 }}
       animate={inView ? { opacity: 1, y: 0 } : {}}
       transition={{ duration: 0.5 }}
-      onClick={() => onSelect(c)}
-      className={`group relative rounded-3xl border overflow-hidden cursor-pointer transition-all duration-300 ${
-        isSelected
-          ? "border-gold/50 bg-gold/[0.05] shadow-[0_0_30px_rgba(201,168,76,0.12)]"
-          : "border-white/[0.07] bg-white/[0.02] hover:border-white/15 hover:shadow-[0_0_20px_rgba(0,0,0,0.4)]"
+      onClick={() => { if (!isComplete) onSelect(c); }}
+      className={`group relative rounded-3xl border overflow-hidden transition-all duration-300 ${
+        isComplete
+          ? "border-emerald-500/30 bg-emerald-500/[0.03] cursor-default opacity-75"
+          : isSelected
+            ? "border-gold/50 bg-gold/[0.05] shadow-[0_0_30px_rgba(201,168,76,0.12)] cursor-pointer"
+            : "border-white/[0.07] bg-white/[0.02] hover:border-white/15 hover:shadow-[0_0_20px_rgba(0,0,0,0.4)] cursor-pointer"
       }`}
     >
       {/* Left accent bar */}
@@ -120,14 +122,16 @@ function CaseCard({
               </span>
             )}
           </div>
-          <div
-            className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${
-              isSelected ? "text-black" : "text-white/20"
-            }`}
-            style={isSelected ? { background: accent } : {}}
-          >
-            {isSelected ? <Check size={12} /> : <span className="text-sm leading-none">+</span>}
-          </div>
+          {isComplete ? (
+            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-500/15 text-emerald-400 border border-emerald-500/25">
+              <Check size={9} />{isRTL ? "مكتملة" : "Funded"}
+            </span>
+          ) : (
+            <div className={`w-6 h-6 rounded-lg flex items-center justify-center transition-all flex-shrink-0 ${isSelected ? "text-black" : "text-white/20"}`}
+              style={isSelected ? { background: accent } : {}}>
+              {isSelected ? <Check size={12} /> : <span className="text-sm leading-none">+</span>}
+            </div>
+          )}
         </div>
 
         {/* Name + brief */}
@@ -279,6 +283,7 @@ export default function DonatePage() {
   const paginated  = filtered.slice((page - 1) * PER_PAGE, page * PER_PAGE);
 
   function handleSelect(c: Case) {
+    if (pct(c.raisedAmount, c.targetAmount) >= 100 && c.targetAmount) return;
     setSelectedCase(c);
     setCaseInput(c.number);
     setInputError(false);
@@ -431,6 +436,7 @@ export default function DonatePage() {
                     isRTL={isRTL}
                     isSelected={selectedCase?.number === c.number}
                     onSelect={handleSelect}
+                    isComplete={pct(c.raisedAmount, c.targetAmount) >= 100 && !!c.targetAmount}
                   />
                 ))}
                 {paginated.length === 0 && (

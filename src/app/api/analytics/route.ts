@@ -121,3 +121,29 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ success: false, error: "Server error" }, { status: 500 });
   }
 }
+
+/* ─── DELETE /api/analytics — owner only, clears all events ─────────── */
+export async function DELETE(req: NextRequest) {
+  try {
+    const payload = await getAdminFromRequest(req);
+    if (!payload) return NextResponse.json({ success: false, error: "Unauthorized" }, { status: 401 });
+    if (payload.role !== "owner") return NextResponse.json({ success: false, error: "Forbidden" }, { status: 403 });
+
+    const db = await getDb();
+    const result = await db.collection("analytics_events").deleteMany({});
+
+    const { logAction } = await import("@/lib/auditLog");
+    await logAction({
+      adminId: payload.sub,
+      adminName: payload.name,
+      action: "delete",
+      collection: "analytics_events",
+      details: `Cleared all analytics events (${result.deletedCount} records)`,
+    });
+
+    return NextResponse.json({ success: true, deleted: result.deletedCount }, { status: 200 });
+  } catch (err) {
+    console.error("Analytics DELETE error:", err);
+    return NextResponse.json({ success: false, error: "Internal server error" }, { status: 500 });
+  }
+}

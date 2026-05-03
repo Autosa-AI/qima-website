@@ -4,7 +4,7 @@ import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import FormField from "@/components/admin/FormField";
-import { Plus, Edit2, Trash2, Zap, ImageIcon, ChevronDown, User, Phone, Image as ImageIconLucide, X as XIcon } from "lucide-react";
+import { Plus, Edit2, Trash2, Zap, ImageIcon, ChevronDown, User, Phone, Image as ImageIconLucide, X as XIcon, RotateCcw } from "lucide-react";
 import ShareImageGenerator, { type CaseForImage } from "@/components/admin/ShareImageGenerator";
 
 interface Category {
@@ -76,6 +76,9 @@ export default function CasesPage() {
   const [saving, setSaving]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Case | null>(null);
   const [showShareModal, setShowShareModal] = useState(false);
+  const [showResetModal, setShowResetModal]   = useState(false);
+  const [resetSelected, setResetSelected]     = useState<Set<string>>(new Set());
+  const [resetting, setResetting]             = useState(false);
   const [beneficiaryOpen, setBeneficiaryOpen] = useState(false);
   const [uploadingProof, setUploadingProof]   = useState(false);
 
@@ -201,6 +204,27 @@ export default function CasesPage() {
     }
   }
 
+  async function handleResetRaised() {
+    if (resetSelected.size === 0) return;
+    setResetting(true);
+    try {
+      const res  = await fetchWithAuth("/api/cases/reset-raised", {
+        method: "POST",
+        body: JSON.stringify({ caseIds: Array.from(resetSelected) }),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error);
+      toast(`Reset ${data.modified} case(s) to 0`, "success");
+      setShowResetModal(false);
+      setResetSelected(new Set());
+      fetchData();
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Reset failed", "error");
+    } finally {
+      setResetting(false);
+    }
+  }
+
   async function handleProofUpload(file: File) {
     setUploadingProof(true);
     try {
@@ -240,6 +264,13 @@ export default function CasesPage() {
           >
             <ImageIcon size={16} />
             Share Image
+          </button>
+          <button
+            onClick={() => { setResetSelected(new Set()); setShowResetModal(true); }}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white/70 text-sm font-medium hover:bg-white/10 hover:text-white transition-colors"
+          >
+            <RotateCcw size={16} />
+            Reset Progress
           </button>
           <button
             onClick={openAdd}
@@ -610,6 +641,107 @@ export default function CasesPage() {
           cases={cases.filter(c => c.isActive) as CaseForImage[]}
           onClose={() => setShowShareModal(false)}
         />
+      )}
+
+      {showResetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-sm" onClick={() => setShowResetModal(false)} />
+          <div className="relative z-10 w-full max-w-xl bg-[#141414] border border-white/10 rounded-3xl overflow-hidden flex flex-col max-h-[85vh]">
+
+            {/* Header */}
+            <div className="px-6 py-5 border-b border-white/[0.06] flex items-center justify-between">
+              <div>
+                <h2 className="text-white font-bold">Reset Fundraising Progress</h2>
+                <p className="text-white/35 text-xs mt-0.5">Sets raisedAmount to 0. Cases stay active.</p>
+              </div>
+              <button onClick={() => setShowResetModal(false)} className="text-white/30 hover:text-white text-xl leading-none">&times;</button>
+            </div>
+
+            {/* Quick-select bar */}
+            <div className="px-6 py-3 border-b border-white/[0.04] flex items-center gap-2">
+              <button
+                onClick={() => setResetSelected(new Set(cases.map(c => c._id)))}
+                className="px-3 py-1.5 rounded-full text-xs border border-white/10 text-white/50 hover:border-white/20 hover:text-white transition-all"
+              >All</button>
+              <button
+                onClick={() => setResetSelected(new Set(
+                  cases.filter(c => c.targetAmount && c.targetAmount > 0 && (c.raisedAmount ?? 0) >= c.targetAmount).map(c => c._id)
+                ))}
+                className="px-3 py-1.5 rounded-full text-xs border border-emerald-500/30 text-emerald-400/70 hover:border-emerald-500/50 hover:text-emerald-400 transition-all"
+              >Completed only</button>
+              <button
+                onClick={() => setResetSelected(new Set(cases.filter(c => (c.raisedAmount ?? 0) > 0).map(c => c._id)))}
+                className="px-3 py-1.5 rounded-full text-xs border border-white/10 text-white/50 hover:border-white/20 hover:text-white transition-all"
+              >Has raised</button>
+              <button
+                onClick={() => setResetSelected(new Set())}
+                className="px-3 py-1.5 rounded-full text-xs border border-white/10 text-white/30 hover:text-white transition-all"
+              >None</button>
+              <span className="ml-auto text-white/30 text-xs">{resetSelected.size} selected</span>
+            </div>
+
+            {/* Case list */}
+            <div className="overflow-y-auto flex-1 px-6 py-3 space-y-1.5">
+              {cases.map(c => {
+                const raised = c.raisedAmount ?? 0;
+                const target = c.targetAmount ?? 0;
+                const p = target > 0 ? Math.min(100, Math.round((raised / target) * 100)) : null;
+                const checked = resetSelected.has(c._id);
+                return (
+                  <label key={c._id} className={`flex items-center gap-3 px-4 py-3 rounded-xl cursor-pointer transition-all ${checked ? "bg-white/[0.05] border border-white/10" : "hover:bg-white/[0.03] border border-transparent"}`}>
+                    <input
+                      type="checkbox"
+                      checked={checked}
+                      onChange={() => {
+                        setResetSelected(prev => {
+                          const next = new Set(prev);
+                          next.has(c._id) ? next.delete(c._id) : next.add(c._id);
+                          return next;
+                        });
+                      }}
+                      className="accent-[#C9A84C] w-4 h-4 flex-shrink-0"
+                    />
+                    <span className="text-white/40 text-xs font-mono w-8 flex-shrink-0">#{c.number}</span>
+                    <span className="text-white/80 text-sm flex-1 truncate">{c.ar.name}</span>
+                    {p !== null ? (
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        <div className="w-16 h-1 bg-white/10 rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${Math.max(2,p)}%`, background: p >= 100 ? "#34D399" : "#C9A84C" }} />
+                        </div>
+                        <span className="text-xs w-8 text-right tabular-nums font-semibold" style={{ color: p >= 100 ? "#34D399" : "#C9A84C" }}>{p}%</span>
+                      </div>
+                    ) : (
+                      raised > 0 ? (
+                        <span className="text-[#C9A84C]/60 text-xs tabular-nums flex-shrink-0">{raised.toLocaleString()} EGP</span>
+                      ) : (
+                        <span className="text-white/15 text-xs flex-shrink-0">—</span>
+                      )
+                    )}
+                  </label>
+                );
+              })}
+            </div>
+
+            {/* Footer */}
+            <div className="px-6 py-4 border-t border-white/[0.06] flex items-center justify-between gap-3">
+              <p className="text-white/30 text-xs">
+                {resetSelected.size === 0 ? "Select cases to reset" : `Will reset ${resetSelected.size} case${resetSelected.size !== 1 ? "s" : ""} → raisedAmount = 0`}
+              </p>
+              <div className="flex gap-2">
+                <button onClick={() => setShowResetModal(false)} className="px-4 py-2 rounded-xl text-sm font-medium text-white/50 bg-white/5 hover:bg-white/10 transition-colors">
+                  Cancel
+                </button>
+                <button
+                  onClick={handleResetRaised}
+                  disabled={resetSelected.size === 0 || resetting}
+                  className="px-4 py-2 rounded-xl text-sm font-bold bg-red-500/80 text-white hover:bg-red-500 disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                >
+                  {resetting ? "Resetting…" : `Reset ${resetSelected.size > 0 ? resetSelected.size : ""}`}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

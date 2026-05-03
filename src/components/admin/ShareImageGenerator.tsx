@@ -54,12 +54,8 @@ const ACCENTS = ["#4F8EF7", "#C9A84C", "#34D399", "#A78BFA", "#F97316", "#EC4899
 async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): Promise<HTMLCanvasElement> {
   await document.fonts.ready;
 
-  const W  = 1080;
-  const H  = format === "story" ? 1920 : 1080;
-  const n  = Math.max(1, cases.length);
-
-  // All measurements in base units; scale by count so ≤2 looks roomy,
-  // 6+ stays tight but never overflows.
+  const W    = 1080;
+  const H    = format === "story" ? 1920 : 1080;
   const BASE = format === "story" ? 1 : 0.85;
   const sc   = (v: number) => Math.round(v * BASE);
 
@@ -68,7 +64,7 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   canvas.height = H;
   const ctx     = canvas.getContext("2d")!;
 
-  /* ── Background ─────────────────────────────────────────────────────── */
+  /* ── Background ──────────────────────────────────────────────────────── */
   ctx.fillStyle = "#0b0b0b";
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "rgba(255,255,255,0.018)";
@@ -78,9 +74,9 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
     }
 
   /* ── Logo ────────────────────────────────────────────────────────────── */
-  const PAGE_PAD = 44;
+  const PAGE_PAD = sc(56);
   const LW       = sc(200);
-  let   Y        = sc(48);
+  let   Y        = sc(52);
 
   try {
     const logo = new Image();
@@ -111,151 +107,154 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
 
   /* ── Divider ─────────────────────────────────────────────────────────── */
   ctx.strokeStyle = "rgba(201,168,76,0.35)"; ctx.lineWidth = 1.5;
-  ctx.beginPath(); ctx.moveTo(PAGE_PAD + 16, Y); ctx.lineTo(W / 2 - 14, Y); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(W / 2 + 14, Y); ctx.lineTo(W - PAGE_PAD - 16, Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAGE_PAD, Y); ctx.lineTo(W / 2 - sc(18), Y); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(W / 2 + sc(18), Y); ctx.lineTo(W - PAGE_PAD, Y); ctx.stroke();
   ctx.fillStyle = "#C9A84C";
-  for (const d of [-7, 7]) { ctx.beginPath(); ctx.arc(W / 2 + d, Y, 2.8, 0, Math.PI * 2); ctx.fill(); }
-  Y += sc(32);
+  for (const d of [-sc(8), sc(8)]) { ctx.beginPath(); ctx.arc(W / 2 + d, Y, 2.8, 0, Math.PI * 2); ctx.fill(); }
+  Y += sc(36);
 
-  /* ── Cases ───────────────────────────────────────────────────────────── */
+  /* ── Cases — minimal row layout (no boxes) ───────────────────────────── */
+  const ACC_W   = sc(3);
+  const ACC_GAP = sc(18);
+  const IL      = PAGE_PAD + ACC_W + ACC_GAP;      // left text edge
+  const IR      = W - PAGE_PAD;                    // right text edge
+  const TW      = IR - IL;
 
-  // Fixed compact card dimensions — not stretched
-  const BAR_H   = sc(10);
-  const NUM_F   = sc(17);
-  const NAME_F  = sc(26);
-  const BRIEF_F = sc(16);
-  const STAT_F  = sc(15);
+  const NUM_F   = sc(14);
+  const NAME_F  = sc(24);
+  const BRIEF_F = sc(15);
+  const STAT_F  = sc(13);
+  const BAR_H   = sc(4);
 
-  // Vertical slots inside card — generous padding for readability
-  const cp      = sc(20);                          // card top/bottom padding
-  const r1      = cp + NAME_F;                     // row 1: number + name
-  const r2      = r1 + sc(10) + BRIEF_F;           // row 2: brief
-  const barTop  = r2 + sc(14);                     // progress bar top
-  const r3      = barTop + BAR_H + sc(10) + STAT_F;// row 3: stats
-  const CARD_H  = r3 + cp;                         // total card height
+  // Row-relative vertical positions
+  const PT      = sc(18);                           // padding top
+  const r1      = PT + NAME_F;                      // name + number baseline
+  const r2      = r1 + sc(8) + BRIEF_F;             // brief baseline
+  const barTop  = r2 + sc(12);                      // bar top edge
+  const r3      = barTop + BAR_H + sc(7) + STAT_F;  // stats baseline
+  const ROW_H   = r3 + sc(18);                      // total row height
+  const ROW_GAP = sc(12);
 
-  const CARD_W   = W - PAGE_PAD * 2;
-  const CARD_GAP = sc(16);                         // gap between cards
-
-  // Accent bar + inner horizontal padding
-  const ACC_W = 8;
-  const IL    = PAGE_PAD + ACC_W + sc(22);         // left text edge
-  const IR    = PAGE_PAD + CARD_W - sc(22);        // right text edge
-  const TW    = IR - IL;
+  // Vertically center the cases block in the available space
+  const FT_H      = sc(130);
+  const FT_TOP    = H - FT_H;
+  const blockH    = cases.length * ROW_H + (cases.length - 1) * ROW_GAP;
+  const available = FT_TOP - sc(20) - Y;
+  Y += Math.max(0, Math.round((available - blockH) / 2));
 
   for (let i = 0; i < cases.length; i++) {
     const c  = cases[i];
     const ac = ACCENTS[i % ACCENTS.length];
-    const cy = Y + i * (CARD_H + CARD_GAP);
-    const cx = PAGE_PAD;
+    const ry = Y + i * (ROW_H + ROW_GAP);
 
-    /* Card background */
-    ctx.fillStyle = "rgba(255,255,255,0.032)";
-    rrect(ctx, cx, cy, CARD_W, CARD_H, 14);
-    ctx.fill();
-
-    /* Card border */
-    ctx.strokeStyle = `${ac}28`; ctx.lineWidth = 1.2;
-    rrect(ctx, cx, cy, CARD_W, CARD_H, 14);
-    ctx.stroke();
-
-    /* Accent bar — left edge, full height, rounded left side */
-    ctx.fillStyle = ac;
-    rrect(ctx, cx, cy, ACC_W + 6, CARD_H, 10); ctx.fill();
-    ctx.fillRect(cx + 9, cy, ACC_W - 2, CARD_H);
-
-    /* ── Row 1: Number (left) + Name (right) ── */
-    ctx.textAlign = "left"; ctx.direction = "ltr";
-    ctx.font = `700 ${NUM_F}px Urbanist, Arial`;
-    ctx.fillStyle = ac;
-    const numTxt = `#${c.number}`;
-    ctx.fillText(numTxt, IL, cy + r1);
-    const numW = ctx.measureText(numTxt).width;
-
-    // Urgent badge inline after number
-    let afterNum = IL + numW + sc(8);
-    if (c.isUrgent) {
-      ctx.font = `700 ${sc(11)}px Urbanist, Arial`;
-      const bLabel = "URGENT";
-      const bw = ctx.measureText(bLabel).width + sc(8);
-      const bh = NUM_F;
-      const bx = afterNum;
-      const by = cy + r1 - NUM_F * 0.82;
-      ctx.fillStyle = "rgba(251,191,36,0.14)";
-      rrect(ctx, bx, by, bw, bh, 3); ctx.fill();
-      ctx.fillStyle = "#FBB724";
-      ctx.fillText(bLabel, bx + sc(4), cy + r1 - NUM_F * 0.08);
-      afterNum += bw + sc(6);
+    // Thin separator between rows
+    if (i > 0) {
+      ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 1;
+      ctx.beginPath(); ctx.moveTo(IL, ry); ctx.lineTo(IR, ry); ctx.stroke();
     }
 
-    // Name — right-aligned, truncated to remaining space
-    const nameMaxW = TW - (afterNum - IL);
+    // Accent bar — left edge, spans the content area
+    ctx.fillStyle = ac;
+    ctx.fillRect(PAGE_PAD, ry + PT, ACC_W, ROW_H - PT * 2);
+
+    /* ── Line 1: #number (left, highlighted pill) · Name (right) ── */
+    ctx.font = `800 ${NUM_F}px Urbanist, Arial`;
+    const numTxt = `#${c.number}`;
+    const numW   = ctx.measureText(numTxt).width;
+    const pillPX = sc(10);
+    const pillPY = sc(5);
+    const pillW  = numW + pillPX * 2;
+    const pillH  = NUM_F + pillPY * 2;
+    const pillX  = IL;
+    const pillY  = ry + r1 - NUM_F * 0.82 - pillPY;
+    // pill background
+    ctx.fillStyle = ac + "28";
+    rrect(ctx, pillX, pillY, pillW, pillH, sc(5)); ctx.fill();
+    // pill border
+    ctx.strokeStyle = ac + "55"; ctx.lineWidth = 1;
+    rrect(ctx, pillX, pillY, pillW, pillH, sc(5)); ctx.stroke();
+    // number text
+    ctx.fillStyle = ac;
+    ctx.textAlign = "left"; ctx.direction = "ltr";
+    ctx.fillText(numTxt, pillX + pillPX, ry + r1);
+    let afterNum = pillX + pillW + sc(10);
+
+    // Urgent dot
+    if (c.isUrgent) {
+      ctx.fillStyle = "#FBB724";
+      ctx.beginPath(); ctx.arc(afterNum + sc(4), ry + r1 - NUM_F * 0.38, sc(4), 0, Math.PI * 2); ctx.fill();
+      afterNum += sc(16);
+    }
+
+    // Name — right-aligned Arabic
     ctx.font = `700 ${NAME_F}px Cairo, Arial`;
     ctx.fillStyle = "#FFFFFF";
     ctx.textAlign = "right"; ctx.direction = "ltr";
-    ctx.fillText(fit(ctx, c.ar.name, nameMaxW), IR, cy + r1);
+    ctx.fillText(fit(ctx, c.ar.name, TW - (afterNum - IL) - sc(8)), IR, ry + r1);
 
-    /* ── Row 2: Brief ── */
+    /* ── Line 2: Brief ── */
     ctx.font = `400 ${BRIEF_F}px Cairo, Arial`;
-    ctx.fillStyle = "rgba(255,255,255,0.38)";
+    ctx.fillStyle = "rgba(255,255,255,0.35)";
     ctx.textAlign = "right"; ctx.direction = "ltr";
-    ctx.fillText(fit(ctx, c.ar.brief, TW), IR, cy + r2);
+    ctx.fillText(fit(ctx, c.ar.brief, TW), IR, ry + r2);
 
     /* ── Progress bar ── */
     const pct = safePct(c.raisedAmount, c.targetAmount);
-    // Track
-    ctx.fillStyle = "rgba(255,255,255,0.07)";
-    rrect(ctx, IL, cy + barTop, TW, BAR_H, BAR_H / 2); ctx.fill();
-    // Fill
+    ctx.fillStyle = "rgba(255,255,255,0.08)";
+    rrect(ctx, IL, ry + barTop, TW, BAR_H, BAR_H / 2); ctx.fill();
     if (pct > 0) {
       const fw = Math.max(BAR_H, Math.round((pct / 100) * TW));
       const g  = ctx.createLinearGradient(IL, 0, IL + fw, 0);
       g.addColorStop(0, ac); g.addColorStop(1, "#E8C87A");
       ctx.fillStyle = g;
-      rrect(ctx, IL, cy + barTop, fw, BAR_H, BAR_H / 2); ctx.fill();
+      rrect(ctx, IL, ry + barTop, fw, BAR_H, BAR_H / 2); ctx.fill();
     }
 
-    /* ── Row 3: Stats ── */
+    /* ── Line 3: Stats ── */
     if (c.targetAmount && c.targetAmount > 0) {
-      // Percentage — left, accent badge
       const pctTxt = `${pct}%`;
       ctx.font = `700 ${STAT_F}px Urbanist, Arial`;
-      const pw = ctx.measureText(pctTxt).width + sc(10);
-      ctx.fillStyle = `${ac}20`;
-      rrect(ctx, IL, cy + r3 - STAT_F * 0.82, pw, STAT_F + sc(2), 3); ctx.fill();
-      ctx.fillStyle = ac; ctx.textAlign = "left"; ctx.direction = "ltr";
-      ctx.fillText(pctTxt, IL + sc(5), cy + r3);
+      ctx.fillStyle = ac;
+      ctx.textAlign = "left"; ctx.direction = "ltr";
+      ctx.fillText(pctTxt, IL, ry + r3);
 
-      // Amounts — right
-      const amtTxt = `${(c.raisedAmount ?? 0).toLocaleString("en")} / ${c.targetAmount.toLocaleString("en")} EGP`;
+      const amtTxt = `${(c.raisedAmount ?? 0).toLocaleString("en")} / ${c.targetAmount.toLocaleString("en")} ج`;
       ctx.font = `400 ${STAT_F}px Urbanist, Arial`;
-      ctx.fillStyle = "rgba(255,255,255,0.38)";
-      ctx.textAlign = "right"; ctx.direction = "ltr";
-      ctx.fillText(fit(ctx, amtTxt, TW - pw - sc(12)), IR, cy + r3);
-    } else {
-      ctx.font = `400 ${STAT_F}px Cairo, Arial`;
       ctx.fillStyle = "rgba(255,255,255,0.28)";
       ctx.textAlign = "right"; ctx.direction = "ltr";
-      ctx.fillText("جمع التبرعات جارية", IR, cy + r3);
+      const pw = ctx.measureText(pctTxt).width + sc(14);
+      ctx.fillText(fit(ctx, amtTxt, TW - pw), IR, ry + r3);
+    } else {
+      ctx.font = `400 ${STAT_F}px Cairo, Arial`;
+      ctx.fillStyle = "rgba(255,255,255,0.22)";
+      ctx.textAlign = "right"; ctx.direction = "ltr";
+      ctx.fillText("جمع التبرعات جارية", IR, ry + r3);
     }
   }
 
-  /* ── Footer — pinned to bottom ─────────────────────────────────────── */
-  const FT_H   = sc(90);
-  const FT_TOP = H - FT_H;
+  /* ── Footer — pinned to bottom ───────────────────────────────────────── */
 
+  // Divider line
   ctx.strokeStyle = "rgba(201,168,76,0.2)"; ctx.lineWidth = 1;
-  ctx.beginPath(); ctx.moveTo(PAGE_PAD + 20, FT_TOP + sc(12)); ctx.lineTo(W - PAGE_PAD - 20, FT_TOP + sc(12)); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(PAGE_PAD, FT_TOP); ctx.lineTo(W - PAGE_PAD, FT_TOP); ctx.stroke();
 
-  const FT_F = sc(19);
-  ctx.font = `400 ${FT_F}px Cairo, Arial`;
-  ctx.fillStyle = "rgba(255,255,255,0.32)";
+  const FT_INNER = FT_TOP + sc(18);
+  const LABEL_F  = sc(15);
+
+  // Single centered block — number + labels
   ctx.textAlign = "center"; ctx.direction = "ltr";
-  ctx.fillText("تبرع عبر واتساب  ·  +201039091390", W / 2, FT_TOP + sc(12) + FT_F + sc(12));
+  ctx.font = `400 ${LABEL_F}px Cairo, Arial`;
+  ctx.fillStyle = "rgba(255,255,255,0.35)";
+  ctx.fillText("واتساب  ·  إنستاباي : محفظة / حساب", W / 2, FT_INNER + LABEL_F);
+  ctx.font = `800 ${sc(32)}px Urbanist, Arial`;
+  ctx.fillStyle = "#C9A84C";
+  ctx.fillText("+201039091390", W / 2, FT_INNER + LABEL_F + sc(10) + sc(32));
 
-  ctx.font = `600 ${sc(14)}px Urbanist, Arial`;
-  ctx.fillStyle = "rgba(201,168,76,0.45)";
-  ctx.fillText("qima-egypt.vercel.app", W / 2, FT_TOP + sc(12) + FT_F + sc(12) + sc(14) + sc(10));
+  // Website — bottom center
+  ctx.font = `500 ${sc(13)}px Urbanist, Arial`;
+  ctx.fillStyle = "rgba(201,168,76,0.4)";
+  ctx.textAlign = "center";
+  ctx.fillText("qima-egypt.vercel.app", W / 2, H - sc(14));
 
   return canvas;
 }
@@ -269,7 +268,7 @@ async function toFile(canvas: HTMLCanvasElement, name: string): Promise<File> {
 
 /* ─── Component ─────────────────────────────────────────────────────────── */
 export default function ShareImageGenerator({ cases, onClose }: Props) {
-  const [selected,    setSelected]    = useState<Set<string>>(new Set(cases.map(c => c._id)));
+  const [selected,    setSelected]    = useState<Set<string>>(new Set(cases.slice(0, 5).map(c => c._id)));
   const [format,      setFormat]      = useState<"story" | "square">("story");
   const [busy,        setBusy]        = useState(false);
   const [canWebShare, setCanWebShare] = useState(false);
@@ -319,8 +318,16 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
     } catch { /* cancelled */ } finally { setBusy(false); }
   }
 
-  const toggle    = (id: string) => setSelected(s => { const n = new Set(s); n.has(id) ? n.delete(id) : n.add(id); return n; });
-  const toggleAll = () => setSelected(s => s.size === cases.length ? new Set() : new Set(cases.map(c => c._id)));
+  const MAX = 5;
+  const toggle    = (id: string) => setSelected(s => {
+    const n = new Set(s);
+    if (n.has(id)) { n.delete(id); return n; }
+    if (n.size >= MAX) return s;
+    n.add(id); return n;
+  });
+  const toggleAll = () => setSelected(s =>
+    s.size > 0 ? new Set() : new Set(cases.slice(0, MAX).map(c => c._id))
+  );
 
   const PW = 260;
   const PH = format === "story" ? Math.round(260 * 1920 / 1080) : 260;
@@ -334,7 +341,7 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
           <div className="flex items-center gap-3">
             <ImageIcon size={16} className="text-[#C9A84C]" />
             <h2 className="text-white font-bold text-sm">Generate Share Image</h2>
-            <span className="text-white/30 text-xs">· {selectedCases.length} selected</span>
+            <span className="text-white/30 text-xs">· {selectedCases.length}/{MAX} selected</span>
           </div>
           <button onClick={onClose} className="text-white/30 hover:text-white"><X size={18} /></button>
         </div>
@@ -346,7 +353,7 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
             <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
               <span className="text-white/35 text-[11px] font-medium uppercase tracking-wider">Cases</span>
               <button onClick={toggleAll} className="text-[#C9A84C] text-[11px] hover:underline">
-                {selected.size === cases.length ? "None" : "All"}
+                {selected.size > 0 ? "None" : `First ${MAX}`}
               </button>
             </div>
             <div className="flex-1 overflow-y-auto divide-y divide-white/[0.03]">
@@ -356,7 +363,8 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
                 const pct = safePct(c.raisedAmount, c.targetAmount);
                 return (
                   <button key={c._id} onClick={() => toggle(c._id)}
-                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${on ? "bg-white/[0.04]" : "hover:bg-white/[0.02]"}`}>
+                    disabled={!on && selected.size >= MAX}
+                    className={`w-full flex items-center gap-2.5 px-3 py-2.5 text-left transition-colors ${on ? "bg-white/[0.04]" : !on && selected.size >= MAX ? "opacity-30 cursor-not-allowed" : "hover:bg-white/[0.02]"}`}>
                     <span className={`flex-shrink-0 ${on ? "text-[#C9A84C]" : "text-white/15"}`}>
                       {on ? <CheckSquare size={14} /> : <Square size={14} />}
                     </span>

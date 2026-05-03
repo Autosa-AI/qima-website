@@ -6,7 +6,6 @@ import Hero from "@/components/Hero";
 import About from "@/components/About";
 import Mission from "@/components/Mission";
 import Projects from "@/components/Projects";
-import Impact from "@/components/Impact";
 import Donate from "@/components/Donate";
 import Contact from "@/components/Contact";
 import Footer from "@/components/Footer";
@@ -23,7 +22,7 @@ export default function Home() {
             <About />
             <Mission />
             <Projects />
-            <Impact />
+            {/* <Impact /> */}
             <Donate />
             <Contact />
           </main>

@@ -1,8 +1,8 @@
 "use client";
 import { useLang } from "@/context/LanguageContext";
 
-const navKeys = ["nav_about", "nav_mission", "nav_projects", "nav_impact", "nav_donate", "nav_contact"];
-const navHrefs = ["#about", "#mission", "#projects", "#impact", "#donate", "#contact"];
+const navKeys = ["nav_about", "nav_mission", "nav_projects", "nav_donate", "nav_contact"];
+const navHrefs = ["#about", "#mission", "#projects", "/donate", "#contact"];
 
 const InstagramIcon = () => (
   <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">

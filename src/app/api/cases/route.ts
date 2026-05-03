@@ -54,12 +54,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const { categoryId, ar, en, isUrgent, responsibleAdminId, targetAmount } = body as {
+    const { categoryId, ar, en, isUrgent, targetAmount } = body as {
       categoryId?: string;
       ar?: { name: string; brief: string; story: string; need: string };
       en?: { name: string; brief: string; story: string; need: string };
       isUrgent?: boolean;
-      responsibleAdminId?: string;
       targetAmount?: number;
     };
 
@@ -113,20 +112,7 @@ export async function POST(req: NextRequest) {
       .toArray();
     const order = maxOrderDoc.length > 0 ? maxOrderDoc[0].order + 1 : 1;
 
-    // Resolve responsible admin name if ID provided
-    let responsibleAdminName: string | undefined;
-    let resolvedResponsibleId: ObjectId | undefined;
-    if (responsibleAdminId && ObjectId.isValid(responsibleAdminId)) {
-      const responsible = await db.collection("admins").findOne(
-        { _id: new ObjectId(responsibleAdminId) },
-        { projection: { name: 1 } }
-      );
-      if (responsible) {
-        resolvedResponsibleId = new ObjectId(responsibleAdminId);
-        responsibleAdminName  = responsible.name as string;
-      }
-    }
-
+    // Auto-assign responsible admin to the creator
     const now = new Date();
     const newCase: Omit<DonateCase, "_id"> = {
       number,
@@ -146,7 +132,8 @@ export async function POST(req: NextRequest) {
       isActive: true,
       isUrgent: isUrgent === true,
       order,
-      ...(resolvedResponsibleId && { responsibleAdminId: resolvedResponsibleId, responsibleAdminName }),
+      responsibleAdminId:   new ObjectId(payload.sub),
+      responsibleAdminName: payload.name,
       ...(typeof targetAmount === "number" && targetAmount >= 0 && { targetAmount, raisedAmount: 0 }),
       createdBy: new ObjectId(payload.sub),
       createdAt: now,

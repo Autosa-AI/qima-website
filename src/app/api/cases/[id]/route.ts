@@ -76,20 +76,6 @@ export async function PUT(
       );
     }
 
-    // Resolve responsible admin
-    let resolvedResponsibleId: ObjectId | undefined;
-    let responsibleAdminName: string | undefined;
-    if (responsibleAdminId && ObjectId.isValid(responsibleAdminId)) {
-      const responsible = await db.collection("admins").findOne(
-        { _id: new ObjectId(responsibleAdminId) },
-        { projection: { name: 1 } }
-      );
-      if (responsible) {
-        resolvedResponsibleId = new ObjectId(responsibleAdminId);
-        responsibleAdminName  = responsible.name as string;
-      }
-    }
-
     const updates: Partial<DonateCase> = {
       categoryId: new ObjectId(categoryId),
       ar: {
@@ -107,17 +93,26 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    if (typeof isActive      === "boolean") updates.isActive      = isActive;
-    if (typeof isUrgent      === "boolean") updates.isUrgent      = isUrgent;
-    if (typeof targetAmount  === "number" && targetAmount  >= 0)  updates.targetAmount  = targetAmount;
-    if (typeof raisedAmount  === "number" && raisedAmount  >= 0)  updates.raisedAmount  = raisedAmount;
-    // null = explicitly clear, undefined = leave unchanged
-    if (responsibleAdminId === null) {
-      updates.responsibleAdminId   = undefined;
-      updates.responsibleAdminName = undefined;
-    } else if (resolvedResponsibleId) {
-      updates.responsibleAdminId   = resolvedResponsibleId;
-      updates.responsibleAdminName = responsibleAdminName;
+    if (typeof isActive     === "boolean") updates.isActive     = isActive;
+    if (typeof isUrgent     === "boolean") updates.isUrgent     = isUrgent;
+    if (typeof targetAmount === "number" && targetAmount >= 0)  updates.targetAmount = targetAmount;
+    if (typeof raisedAmount === "number" && raisedAmount >= 0)  updates.raisedAmount = raisedAmount;
+
+    // Only owner can change the responsible admin
+    if (payload.role === "owner" && responsibleAdminId !== undefined) {
+      if (responsibleAdminId === null) {
+        updates.responsibleAdminId   = undefined;
+        updates.responsibleAdminName = undefined;
+      } else if (ObjectId.isValid(responsibleAdminId)) {
+        const responsible = await db.collection("admins").findOne(
+          { _id: new ObjectId(responsibleAdminId) },
+          { projection: { name: 1 } }
+        );
+        if (responsible) {
+          updates.responsibleAdminId   = new ObjectId(responsibleAdminId);
+          updates.responsibleAdminName = responsible.name as string;
+        }
+      }
     }
 
     await db

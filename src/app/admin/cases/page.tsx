@@ -53,7 +53,8 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function CasesPage() {
-  const { fetchWithAuth } = useAdmin();
+  const { fetchWithAuth, admin } = useAdmin();
+  const isOwner = admin?.role === "owner";
   const { toast } = useToast();
 
   const [cases, setCases]         = useState<Case[]>([]);
@@ -344,25 +345,33 @@ export default function CasesPage() {
                 </select>
               </div>
 
-              {/* Responsible admin picker */}
-              <div>
-                <label className="block text-white/60 text-xs font-medium mb-1.5">
-                  Responsible Admin
-                  <span className="text-white/30 font-normal ml-1">(appears in donor WhatsApp message)</span>
-                </label>
-                <select
-                  value={form.responsibleAdminId}
-                  onChange={e => setForm(f => ({ ...f, responsibleAdminId: e.target.value }))}
-                  className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors"
-                >
-                  <option value="" className="bg-[#141414]">-- Unassigned --</option>
-                  {admins.map(a => (
-                    <option key={a._id} value={a._id} className="bg-[#141414]">
-                      {a.name} ({a.email})
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {/* Responsible admin — auto-set on create, owner-only on edit */}
+              {editingId && (
+                <div>
+                  <label className="block text-white/60 text-xs font-medium mb-1.5">
+                    Responsible Admin
+                    {!isOwner && <span className="text-white/25 font-normal ml-1">(owner only)</span>}
+                  </label>
+                  {isOwner ? (
+                    <select
+                      value={form.responsibleAdminId}
+                      onChange={e => setForm(f => ({ ...f, responsibleAdminId: e.target.value }))}
+                      className="w-full bg-white/[0.04] border border-white/10 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-[#C9A84C]/60 transition-colors"
+                    >
+                      <option value="" className="bg-[#141414]">-- Unassigned --</option>
+                      {admins.map(a => (
+                        <option key={a._id} value={a._id} className="bg-[#141414]">
+                          {a.name} ({a.email})
+                        </option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="w-full bg-white/[0.02] border border-white/[0.06] rounded-xl px-3 py-2.5 text-white/40 text-sm">
+                      {admins.find(a => a._id === form.responsibleAdminId)?.name ?? "—"}
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Progress fields */}
               <div className="grid grid-cols-2 gap-3">

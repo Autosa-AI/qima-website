@@ -39,15 +39,14 @@ export default function Contact() {
   const ref = useRef(null);
   const inView = useInView(ref, { once: true, margin: "-80px" });
   const [name, setName]       = useState("");
-  const [email, setEmail]     = useState("");
   const [message, setMessage] = useState("");
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     const text = encodeURIComponent(
       isRTL
-        ? `السلام عليكم فريق قيمة،\n\nالاسم: ${name}\nالإيميل: ${email}\n\n${message}`
-        : `Hello Qima team,\n\nName: ${name}\nEmail: ${email}\n\n${message}`
+        ? `السلام عليكم فريق قيمة،\n\nالاسم: ${name}\n\n${message}`
+        : `Hello Qima team,\n\nName: ${name}\n\n${message}`
     );
     window.open(`https://wa.me/201039091390?text=${text}`, "_blank");
   };
@@ -69,14 +68,14 @@ export default function Contact() {
           <p className={`text-gold/70 text-lg ${isRTL ? "font-arabic" : ""}`}>{t("contact_sub")}</p>
         </motion.div>
 
-        <div className={`grid md:grid-cols-2 gap-10 ${isRTL ? "md:flex md:flex-row-reverse" : ""}`}>
+        <div className="flex flex-col items-center gap-12">
           {/* Form */}
           <motion.form
-            initial={{ opacity: 0, x: isRTL ? 40 : -40 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.1 }}
             onSubmit={handleSubmit}
-            className="space-y-4"
+            className="space-y-4 w-full max-w-lg"
           >
             <input
               type="text"
@@ -84,14 +83,6 @@ export default function Contact() {
               required
               value={name}
               onChange={e => setName(e.target.value)}
-              className={`w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-gold/40 transition-colors ${isRTL ? "text-right font-arabic" : ""}`}
-            />
-            <input
-              type="email"
-              placeholder={t("contact_email")}
-              required
-              value={email}
-              onChange={e => setEmail(e.target.value)}
               className={`w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-gold/40 transition-colors ${isRTL ? "text-right font-arabic" : ""}`}
             />
             <textarea
@@ -102,7 +93,6 @@ export default function Contact() {
               onChange={e => setMessage(e.target.value)}
               className={`w-full bg-white/[0.03] border border-white/10 rounded-xl px-4 py-3 text-white placeholder:text-white/30 focus:outline-none focus:border-gold/40 transition-colors resize-none ${isRTL ? "text-right font-arabic" : ""}`}
             />
-
             <button
               type="submit"
               className={`group flex items-center gap-3 w-full justify-center px-6 py-3.5 bg-white/5 border border-white/10 rounded-xl text-white hover:border-gold/40 hover:bg-gold/5 transition-all ${isRTL ? "flex-row-reverse font-arabic" : ""}`}
@@ -110,33 +100,31 @@ export default function Contact() {
               <span>{t("contact_send")}</span>
               <Send size={16} className={`group-hover:translate-x-1 transition-transform ${isRTL ? "rotate-180 group-hover:-translate-x-1" : ""}`} />
             </button>
-
           </motion.form>
 
           {/* Social links */}
           <motion.div
-            initial={{ opacity: 0, x: isRTL ? -40 : 40 }}
-            animate={inView ? { opacity: 1, x: 0 } : {}}
+            initial={{ opacity: 0, y: 20 }}
+            animate={inView ? { opacity: 1, y: 0 } : {}}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className={`flex flex-col justify-center ${isRTL ? "items-end text-right font-arabic" : "items-start"}`}
+            className="w-full max-w-lg"
           >
-            <p className="text-white/40 text-sm mb-8">{t("contact_or")}</p>
-
-            <div className="space-y-2 w-full">
+            <p className={`text-white/40 text-sm mb-4 text-center ${isRTL ? "font-arabic" : ""}`}>{t("contact_or")}</p>
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
               {([
                 { icon: <Mail size={14} />,    label: "qima.charity@gmail.com", href: "mailto:qima.charity@gmail.com",                            color: "#C9A84C" },
                 { icon: <InstagramIcon />,     label: "@qima.egypt",            href: "https://www.instagram.com/qima.egypt/",                    color: "#E1306C" },
                 { icon: <YoutubeIcon />,       label: "Qima Egypt",             href: "https://www.youtube.com/@qima-egypt",                      color: "#FF0000" },
                 { icon: <FacebookIcon />,      label: "Qima",                   href: "https://www.facebook.com/profile.php?id=61588880265644",   color: "#1877F2" },
                 { icon: <TikTokIcon />,        label: "@qima.charity",          href: "https://www.tiktok.com/@qima.charity",                     color: "#69C9D0" },
-                { icon: <LinkedinIcon />,      label: "qima-egypt",             href: "https://www.linkedin.com/company/qima-egypt",             color: "#0A66C2" },
+                { icon: <LinkedinIcon />,      label: "qima-egypt",             href: "https://www.linkedin.com/company/qima-egypt",              color: "#0A66C2" },
               ]).map(({ icon, label, href, color }) => (
                 <a
                   key={label}
                   href={href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className={`flex items-center gap-3 group px-2.5 py-2 rounded-lg border border-white/[0.05] hover:border-white/10 hover:bg-white/[0.03] transition-all ${isRTL ? "flex-row-reverse" : ""}`}
+                  className={`flex items-center gap-2 group px-3 py-2.5 rounded-lg border border-white/[0.05] hover:border-white/10 hover:bg-white/[0.03] transition-all ${isRTL ? "flex-row-reverse" : ""}`}
                 >
                   <div
                     className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-transform group-hover:scale-110"
@@ -144,7 +132,7 @@ export default function Contact() {
                   >
                     {icon}
                   </div>
-                  <span className="text-white/60 group-hover:text-white/90 text-xs transition-colors">
+                  <span className="text-white/60 group-hover:text-white/90 text-xs transition-colors truncate">
                     {label}
                   </span>
                 </a>

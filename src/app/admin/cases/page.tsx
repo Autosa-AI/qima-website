@@ -4,8 +4,9 @@ import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import ConfirmModal from "@/components/admin/ConfirmModal";
 import FormField from "@/components/admin/FormField";
-import { Plus, Edit2, Trash2, Zap, ImageIcon, ChevronDown, User, Phone, Image as ImageIconLucide, X as XIcon, RotateCcw } from "lucide-react";
+import { Plus, Edit2, Trash2, Zap, ImageIcon, ChevronDown, User, Phone, Image as ImageIconLucide, X as XIcon, RotateCcw, PartyPopper } from "lucide-react";
 import ShareImageGenerator, { type CaseForImage } from "@/components/admin/ShareImageGenerator";
+import CaseCompletionShare, { type CaseForCompletion } from "@/components/admin/CaseCompletionShare";
 
 interface Category {
   _id: string;
@@ -75,7 +76,8 @@ export default function CasesPage() {
   const [activeTab, setActiveTab]   = useState<"ar" | "en">("ar");
   const [saving, setSaving]             = useState(false);
   const [confirmDelete, setConfirmDelete] = useState<Case | null>(null);
-  const [showShareModal, setShowShareModal] = useState(false);
+  const [showShareModal,      setShowShareModal]      = useState(false);
+  const [showCompletionModal, setShowCompletionModal] = useState(false);
   const [showResetModal, setShowResetModal]   = useState(false);
   const [resetSelected, setResetSelected]     = useState<Set<string>>(new Set());
   const [resetting, setResetting]             = useState(false);
@@ -258,6 +260,13 @@ export default function CasesPage() {
           <p className="text-white/40 text-sm mt-1">Manage donation cases</p>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            onClick={() => setShowCompletionModal(true)}
+            className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors"
+          >
+            <PartyPopper size={16} />
+            Completion
+          </button>
           <button
             onClick={() => setShowShareModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors"
@@ -640,6 +649,13 @@ export default function CasesPage() {
         <ShareImageGenerator
           cases={cases.filter(c => c.isActive) as CaseForImage[]}
           onClose={() => setShowShareModal(false)}
+        />
+      )}
+
+      {showCompletionModal && (
+        <CaseCompletionShare
+          cases={cases.filter(c => c.targetAmount && c.targetAmount > 0 && (c.raisedAmount ?? 0) >= c.targetAmount) as CaseForCompletion[]}
+          onClose={() => setShowCompletionModal(false)}
         />
       )}
 

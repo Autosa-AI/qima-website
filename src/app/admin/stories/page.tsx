@@ -170,8 +170,8 @@ export default function StoriesPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-4 py-6 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-white text-2xl font-bold">Impact Stories</h1>
           <p className="text-white/40 text-sm mt-1">Manage the carousel stories</p>
@@ -186,7 +186,7 @@ export default function StoriesPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-2 xl:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
           {Array.from({ length: 3 }).map((_, i) => (
             <div key={i} className="h-48 rounded-2xl bg-[#141414] border border-white/[0.06] animate-pulse" />
           ))}
@@ -290,7 +290,7 @@ export default function StoriesPage() {
                 placeholder="https://images.unsplash.com/..."
               />
 
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {/* Accent presets */}
                 <div>
                   <label className="block text-white/60 text-xs font-medium mb-2">Accent Color</label>

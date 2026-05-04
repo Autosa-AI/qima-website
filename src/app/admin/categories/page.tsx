@@ -166,8 +166,8 @@ export default function CategoriesPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-4 py-6 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-white text-2xl font-bold">Categories</h1>
           <p className="text-white/40 text-sm mt-1">Manage donation categories</p>
@@ -192,8 +192,8 @@ export default function CategoriesPage() {
           No categories yet. Add your first one.
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-hidden">
-          <table className="w-full">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-x-auto">
+          <table className="w-full min-w-[540px]">
             <thead>
               <tr className="border-b border-white/[0.06]">
                 <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Icon</th>
@@ -277,7 +277,7 @@ export default function CategoriesPage() {
               {editingId ? "Edit Category" : "Add Category"}
             </h2>
             <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <FormField
                   label="Slug"
                   required

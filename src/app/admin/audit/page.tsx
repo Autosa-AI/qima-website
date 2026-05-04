@@ -77,8 +77,8 @@ export default function AuditPage() {
   }
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-4 py-6 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-white text-2xl font-bold">{isOwner ? "Audit Log" : "My Activity"}</h1>
           <p className="text-white/40 text-sm mt-1">
@@ -87,9 +87,9 @@ export default function AuditPage() {
         </div>
 
         {/* Action filter */}
-        <div className="flex items-center gap-2">
-          <Filter size={14} className="text-white/30" />
-          <div className="flex gap-1">
+        <div className="flex items-center gap-2 flex-wrap">
+          <Filter size={14} className="text-white/30 flex-shrink-0" />
+          <div className="flex gap-1 flex-wrap">
             {ACTION_FILTERS.map((f) => (
               <button
                 key={f.value}
@@ -107,8 +107,8 @@ export default function AuditPage() {
         </div>
       </div>
 
-      <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-hidden">
-        <table className="w-full">
+      <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-x-auto">
+        <table className="w-full min-w-[520px]">
           <thead>
             <tr className="border-b border-white/[0.06]">
               <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Action</th>

@@ -138,7 +138,7 @@ export default function DashboardPage() {
   ];
 
   return (
-    <div className="p-8">
+    <div className="px-4 py-6 sm:p-8">
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-white text-2xl font-bold">Dashboard</h1>
@@ -148,7 +148,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats grid */}
-      <div className="grid grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mb-8">
         {loadingData
           ? Array.from({ length: 4 }).map((_, i) => (
               <div

@@ -253,13 +253,13 @@ export default function CasesPage() {
     : cases.filter((c) => c.categoryId === filterCat);
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-6">
+    <div className="px-4 py-6 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-white text-2xl font-bold">Cases</h1>
           <p className="text-white/40 text-sm mt-1">Manage donation cases</p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
           <button
             onClick={() => setShowCompletionModal(true)}
             className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-white/5 border border-white/10 text-white text-sm font-medium hover:bg-white/10 transition-colors"
@@ -330,8 +330,8 @@ export default function CasesPage() {
       ) : filtered.length === 0 ? (
         <div className="text-center py-16 text-white/25 text-sm">No cases found.</div>
       ) : (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-hidden">
-          <table className="w-full">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-x-auto">
+          <table className="w-full min-w-[700px]">
             <thead>
               <tr className="border-b border-white/[0.06]">
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">#</th>
@@ -455,7 +455,7 @@ export default function CasesPage() {
               )}
 
               {/* Progress fields */}
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-white/60 text-xs font-medium mb-1.5">Target Amount (EGP)</label>
                   <input

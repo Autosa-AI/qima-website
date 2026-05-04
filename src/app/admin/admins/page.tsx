@@ -66,7 +66,7 @@ export default function AdminsPage() {
 
   if (currentAdmin?.role !== "owner") {
     return (
-      <div className="p-8 text-center">
+      <div className="px-4 py-6 sm:p-8 text-center">
         <p className="text-white/40 mt-16">Owner access required to manage admins.</p>
       </div>
     );
@@ -174,8 +174,8 @@ export default function AdminsPage() {
 
   /* ─── Render ─────────────────────────────────────────────────────────── */
   return (
-    <div className="p-8 max-w-5xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-4 py-6 sm:p-8 max-w-5xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-white text-2xl font-bold">Admins</h1>
           <p className="text-white/40 text-sm mt-1">{admins.length} account{admins.length !== 1 ? "s" : ""}</p>
@@ -193,8 +193,8 @@ export default function AdminsPage() {
           {[1, 2, 3].map(i => <div key={i} className="h-16 rounded-2xl bg-[#141414] border border-white/[0.06] animate-pulse" />)}
         </div>
       ) : (
-        <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-hidden">
-          <table className="w-full">
+        <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-x-auto">
+          <table className="w-full min-w-[560px]">
             <thead>
               <tr className="border-b border-white/[0.06]">
                 <th className="text-left px-5 py-3 text-white/40 text-xs font-medium">Name</th>

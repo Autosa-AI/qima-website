@@ -243,8 +243,8 @@ export default function ContentPage() {
   const currentSection = SECTIONS.find((s) => s.id === activeSection)!;
 
   return (
-    <div className="p-8">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-4 py-6 sm:p-8">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-white text-2xl font-bold">Content</h1>
           <p className="text-white/40 text-sm mt-1">Override site text content</p>
@@ -276,17 +276,17 @@ export default function ContentPage() {
         </div>
       </div>
 
-      <div className="flex gap-6">
+      <div className="flex flex-col sm:flex-row gap-4 sm:gap-6">
         {/* Section nav */}
-        <aside className="w-44 flex-shrink-0">
-          <nav className="space-y-0.5">
+        <aside className="sm:w-44 sm:flex-shrink-0">
+          <nav className="flex sm:flex-col gap-1 sm:gap-0 sm:space-y-0.5 overflow-x-auto pb-1 sm:pb-0 -mx-1 px-1 sm:mx-0 sm:px-0">
             {SECTIONS.map((section) => {
               const hasChanges = section.fields.some((f) => isModified(f.key));
               return (
                 <button
                   key={section.id}
                   onClick={() => setActiveSection(section.id)}
-                  className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-left transition-all ${
+                  className={`flex-shrink-0 sm:w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium text-left transition-all ${
                     activeSection === section.id
                       ? "bg-[#C9A84C]/15 text-[#C9A84C] border border-[#C9A84C]/20"
                       : "text-white/50 hover:text-white hover:bg-white/[0.04]"

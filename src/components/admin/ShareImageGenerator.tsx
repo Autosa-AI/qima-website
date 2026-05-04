@@ -333,11 +333,11 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
   const PH = format === "story" ? Math.round(260 * 1920 / 1080) : 260;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4">
       <div className="absolute inset-0 bg-black/80 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative z-10 w-full max-w-4xl max-h-[92vh] bg-[#141414] border border-white/10 rounded-3xl overflow-hidden flex flex-col shadow-2xl">
+      <div className="relative z-10 w-full max-w-4xl max-h-[95vh] bg-[#141414] border border-white/10 rounded-2xl sm:rounded-3xl overflow-hidden flex flex-col shadow-2xl">
 
-        <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.06] flex-shrink-0">
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3 sm:py-4 border-b border-white/[0.06] flex-shrink-0">
           <div className="flex items-center gap-3">
             <ImageIcon size={16} className="text-[#C9A84C]" />
             <h2 className="text-white font-bold text-sm">Generate Share Image</h2>
@@ -346,10 +346,10 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
           <button onClick={onClose} className="text-white/30 hover:text-white"><X size={18} /></button>
         </div>
 
-        <div className="flex flex-1 min-h-0">
+        <div className="flex flex-col sm:flex-row flex-1 min-h-0">
 
           {/* Case list */}
-          <div className="w-60 border-r border-white/[0.06] flex flex-col flex-shrink-0">
+          <div className="w-full sm:w-60 border-b sm:border-b-0 sm:border-r border-white/[0.06] flex flex-col flex-shrink-0 max-h-[35vh] sm:max-h-none overflow-y-auto">
             <div className="px-4 py-2.5 border-b border-white/[0.06] flex items-center justify-between">
               <span className="text-white/35 text-[11px] font-medium uppercase tracking-wider">Cases</span>
               <button onClick={toggleAll} className="text-[#C9A84C] text-[11px] hover:underline">
@@ -407,11 +407,11 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
                 ? <p className="text-white/20 text-sm">Select at least one case</p>
                 : <canvas ref={previewRef} width={PW} height={PH}
                     className="rounded-xl shadow-2xl"
-                    style={{ maxHeight: "calc(92vh - 220px)", width: "auto", display: "block" }} />
+                    style={{ maxHeight: "clamp(120px, calc(95vh - 380px), calc(95vh - 220px))", width: "auto", display: "block" }} />
               }
             </div>
 
-            <div className="px-5 py-4 border-t border-white/[0.06] flex-shrink-0 flex flex-wrap gap-2">
+            <div className="px-3 sm:px-5 py-3 sm:py-4 border-t border-white/[0.06] flex-shrink-0 flex flex-wrap gap-2">
               <button onClick={() => shareWA(format)} disabled={busy || !selectedCases.length}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-bold text-black bg-[#25D366] hover:bg-[#1ebe5d] disabled:opacity-40 transition-all">
                 <svg viewBox="0 0 24 24" className="w-4 h-4" fill="currentColor">

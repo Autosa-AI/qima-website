@@ -209,8 +209,8 @@ export default function InsightsPage() {
   }
 
   return (
-    <div className="p-8 max-w-6xl">
-      <div className="flex items-center justify-between mb-8">
+    <div className="px-4 py-6 sm:p-8 max-w-6xl">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
           <h1 className="text-white text-2xl font-bold">Insights</h1>
           <p className="text-white/40 text-sm mt-1">Cumulative visitor & interaction analytics</p>
@@ -240,7 +240,7 @@ export default function InsightsPage() {
       )}
 
       {loading && !data ? (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
           {[1,2,3,4].map(i => <div key={i} className="h-28 rounded-2xl bg-[#141414] border border-white/[0.06] animate-pulse" />)}
         </div>
       ) : data ? (
@@ -249,7 +249,7 @@ export default function InsightsPage() {
           {donationStats && (
             <div className="mb-8">
               <h2 className="text-white/40 text-xs font-medium uppercase tracking-widest mb-4">Fundraising Progress</h2>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-5">
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 mb-5">
                 <StatCard
                   label="Total Raised"
                   value={`${(donationStats.totalRaised).toLocaleString()} EGP`}
@@ -324,7 +324,7 @@ export default function InsightsPage() {
             </div>
 
             {donationHistory ? (
-              <div className="grid md:grid-cols-3 gap-5">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
                 {/* Big total */}
                 <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5 flex flex-col justify-between">
                   <p className="text-white/40 text-xs font-medium mb-2">
@@ -394,7 +394,7 @@ export default function InsightsPage() {
           </div>
 
           {/* ── KPI row ───────────────────────────────────────────────── */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-8">
             <StatCard
               label="Total Events"
               value={data.totals.all}
@@ -421,7 +421,7 @@ export default function InsightsPage() {
             />
           </div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
             {/* ── Daily activity chart ──────────────────────────────── */}
             <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5">
               <h3 className="text-white/60 text-xs font-medium mb-4 uppercase tracking-widest">Daily Activity — Last 30 Days</h3>
@@ -478,7 +478,7 @@ export default function InsightsPage() {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-6 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             {/* ── Top cases ───────────────────────────────────────── */}
             <div className="rounded-2xl border border-white/[0.06] bg-[#141414] p-5">
               <h3 className="text-white/60 text-xs font-medium mb-4 uppercase tracking-widest">Top Selected Cases</h3>
@@ -540,14 +540,14 @@ export default function InsightsPage() {
           </div>
 
           {/* ── Recent events ───────────────────────────────────────── */}
-          <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-hidden">
+          <div className="rounded-2xl border border-white/[0.06] bg-[#141414] overflow-x-auto">
             <div className="px-5 py-4 border-b border-white/[0.06]">
               <h3 className="text-white/60 text-xs font-medium uppercase tracking-widest">Recent Events</h3>
             </div>
             {data.recent.length === 0 ? (
               <p className="text-white/20 text-sm text-center py-8">No events yet</p>
             ) : (
-              <table className="w-full">
+              <table className="w-full min-w-[420px]">
                 <tbody className="divide-y divide-white/[0.03]">
                   {data.recent.map(e => (
                     <tr key={e._id} className="hover:bg-white/[0.015] transition-colors">

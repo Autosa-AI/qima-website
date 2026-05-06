@@ -222,7 +222,7 @@ async function buildCompletionCanvas(
   ctx.fillText("+201039091390", W / 2, FT_Y + LBL_F + sc(10) + sc(32));
   ctx.font = `500 ${sc(13)}px Urbanist, Arial`;
   ctx.fillStyle = "rgba(201,168,76,0.4)";
-  ctx.fillText("qima-egypt.vercel.app", W / 2, H - sc(14));
+  ctx.fillText("qimacharity.com", W / 2, H - sc(14));
 
   return canvas;
 }

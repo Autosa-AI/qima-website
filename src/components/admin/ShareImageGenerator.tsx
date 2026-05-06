@@ -254,7 +254,7 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   ctx.font = `500 ${sc(13)}px Urbanist, Arial`;
   ctx.fillStyle = "rgba(201,168,76,0.4)";
   ctx.textAlign = "center";
-  ctx.fillText("qima-egypt.vercel.app", W / 2, H - sc(14));
+  ctx.fillText("qimacharity.com", W / 2, H - sc(14));
 
   return canvas;
 }
@@ -309,12 +309,12 @@ export default function ShareImageGenerator({ cases, onClose }: Props) {
       const c    = await buildCanvas(selectedCases, fmt);
       const file = await toFile(c, `qima-${fmt}.png`);
       if (canWebShare && navigator.canShare?.({ files: [file] })) {
-        await navigator.share({ files: [file], title: "قيمة", text: "qima-egypt.vercel.app/donate" });
+        await navigator.share({ files: [file], title: "قيمة", text: "qimacharity.com/donate" });
         return;
       }
       const a = document.createElement("a");
       a.href = c.toDataURL("image/png"); a.download = `qima-${fmt}.png`; a.click();
-      setTimeout(() => window.open(`https://wa.me/?text=${encodeURIComponent("qima-egypt.vercel.app/donate")}`, "_blank"), 500);
+      setTimeout(() => window.open(`https://wa.me/?text=${encodeURIComponent("qimacharity.com/donate")}`, "_blank"), 500);
     } catch { /* cancelled */ } finally { setBusy(false); }
   }
 

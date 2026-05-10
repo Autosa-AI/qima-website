@@ -133,14 +133,14 @@ const SECTIONS: ContentSection[] = [
 
 export default function ContentPage() {
   const router = useRouter();
-  const { fetchWithAuth, admin, loading } = useAdmin();
+  const { fetchWithAuth, admin, loading: authLoading } = useAdmin();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && admin && admin.role !== "owner") {
+    if (!authLoading && admin && admin.role !== "owner") {
       router.replace("/admin/cases");
     }
-  }, [loading, admin, router]);
+  }, [authLoading, admin, router]);
 
   const [lang, setLang] = useState<Lang>("ar");
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);

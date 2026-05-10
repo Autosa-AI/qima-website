@@ -29,14 +29,14 @@ const EMPTY_FORM: FormState = { slug: "", icon: "", arLabel: "", enLabel: "" };
 
 export default function CategoriesPage() {
   const router = useRouter();
-  const { fetchWithAuth, admin, loading } = useAdmin();
+  const { fetchWithAuth, admin, loading: authLoading } = useAdmin();
   const { toast } = useToast();
 
   useEffect(() => {
-    if (!loading && admin && admin.role !== "owner") {
+    if (!authLoading && admin && admin.role !== "owner") {
       router.replace("/admin/cases");
     }
-  }, [loading, admin, router]);
+  }, [authLoading, admin, router]);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

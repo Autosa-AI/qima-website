@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import ConfirmModal from "@/components/admin/ConfirmModal";
@@ -41,8 +42,15 @@ const EMPTY_FORM: FormState = {
 };
 
 export default function StoriesPage() {
-  const { fetchWithAuth } = useAdmin();
+  const router = useRouter();
+  const { fetchWithAuth, admin, loading } = useAdmin();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && admin && admin.role !== "owner") {
+      router.replace("/admin/cases");
+    }
+  }, [loading, admin, router]);
 
   const [stories, setStories] = useState<Story[]>([]);
   const [loading, setLoading] = useState(true);

@@ -24,14 +24,14 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
-  { href: "/admin/dashboard", label: "Dashboard", icon: <LayoutDashboard size={18} /> },
-  { href: "/admin/categories", label: "Categories", icon: <FolderOpen size={18} /> },
-  { href: "/admin/cases", label: "Cases", icon: <FileText size={18} /> },
-  { href: "/admin/stories", label: "Stories", icon: <BookOpen size={18} /> },
-  { href: "/admin/content", label: "Content", icon: <Type size={18} /> },
-  { href: "/admin/admins",   label: "Admins",    icon: <Users size={18} />,    ownerOnly: true },
-  { href: "/admin/insights", label: "Insights",  icon: <BarChart2 size={18} />, ownerOnly: true },
-  { href: "/admin/audit",    label: "Audit Log", icon: <ScrollText size={18} /> },
+  { href: "/admin/dashboard",   label: "Dashboard",  icon: <LayoutDashboard size={18} />, ownerOnly: true },
+  { href: "/admin/categories",  label: "Categories", icon: <FolderOpen size={18} />,      ownerOnly: true },
+  { href: "/admin/cases",       label: "Cases",      icon: <FileText size={18} /> },
+  { href: "/admin/stories",     label: "Stories",    icon: <BookOpen size={18} />,         ownerOnly: true },
+  { href: "/admin/content",     label: "Content",    icon: <Type size={18} />,             ownerOnly: true },
+  { href: "/admin/admins",      label: "Admins",     icon: <Users size={18} />,            ownerOnly: true },
+  { href: "/admin/insights",    label: "Insights",   icon: <BarChart2 size={18} />,        ownerOnly: true },
+  { href: "/admin/audit",       label: "Audit Log",  icon: <ScrollText size={18} /> },
 ];
 
 interface AdminSidebarProps {

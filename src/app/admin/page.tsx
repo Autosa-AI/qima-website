@@ -40,7 +40,8 @@ export default function AdminLoginPage() {
         localStorage.setItem("qima_admin_token", data.data.token);
       }
 
-      router.push("/admin/dashboard");
+      const role = data.data?.admin?.role;
+      router.push(role === "owner" ? "/admin/dashboard" : "/admin/cases");
     } catch {
       setError("Network error. Please try again.");
     } finally {

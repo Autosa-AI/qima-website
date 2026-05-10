@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { useAdmin } from "@/components/admin/AdminContext";
 import Link from "next/link";
 import {
@@ -37,10 +38,17 @@ const actionColors: Record<string, string> = {
 };
 
 export default function DashboardPage() {
+  const router = useRouter();
   const { fetchWithAuth, admin, loading } = useAdmin();
   const [stats, setStats] = useState<Stats | null>(null);
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [loadingData, setLoadingData] = useState(true);
+
+  useEffect(() => {
+    if (!loading && admin && admin.role !== "owner") {
+      router.replace("/admin/cases");
+    }
+  }, [loading, admin, router]);
 
   useEffect(() => {
     if (loading) return;

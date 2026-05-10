@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import { Save, RotateCcw } from "lucide-react";
@@ -131,8 +132,15 @@ const SECTIONS: ContentSection[] = [
 ];
 
 export default function ContentPage() {
-  const { fetchWithAuth } = useAdmin();
+  const router = useRouter();
+  const { fetchWithAuth, admin, loading } = useAdmin();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && admin && admin.role !== "owner") {
+      router.replace("/admin/cases");
+    }
+  }, [loading, admin, router]);
 
   const [lang, setLang] = useState<Lang>("ar");
   const [activeSection, setActiveSection] = useState(SECTIONS[0].id);

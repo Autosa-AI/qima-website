@@ -1,5 +1,6 @@
 "use client";
 import { useState, useEffect, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { useAdmin } from "@/components/admin/AdminContext";
 import { useToast } from "@/components/admin/Toast";
 import ConfirmModal from "@/components/admin/ConfirmModal";
@@ -27,8 +28,15 @@ interface FormState {
 const EMPTY_FORM: FormState = { slug: "", icon: "", arLabel: "", enLabel: "" };
 
 export default function CategoriesPage() {
-  const { fetchWithAuth } = useAdmin();
+  const router = useRouter();
+  const { fetchWithAuth, admin, loading } = useAdmin();
   const { toast } = useToast();
+
+  useEffect(() => {
+    if (!loading && admin && admin.role !== "owner") {
+      router.replace("/admin/cases");
+    }
+  }, [loading, admin, router]);
 
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);

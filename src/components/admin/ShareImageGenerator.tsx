@@ -120,18 +120,20 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   const IR      = W - PAGE_PAD;                    // right text edge
   const TW      = IR - IL;
 
-  const NUM_F   = sc(14);
+  const NUM_F   = sc(16);
   const NAME_F  = sc(24);
   const BRIEF_F = sc(15);
   const STAT_F  = sc(13);
-  const BAR_H   = sc(4);
+  const PCT_F   = sc(24);
+  const AMT_F   = sc(16);
+  const BAR_H   = sc(5);
 
   // Row-relative vertical positions
   const PT      = sc(18);                           // padding top
   const r1      = PT + NAME_F;                      // name + number baseline
   const r2      = r1 + sc(8) + BRIEF_F;             // brief baseline
   const barTop  = r2 + sc(12);                      // bar top edge
-  const r3      = barTop + BAR_H + sc(7) + STAT_F;  // stats baseline
+  const r3      = barTop + BAR_H + sc(8) + PCT_F;   // stats baseline
   const ROW_H   = r3 + sc(18);                      // total row height
   const ROW_GAP = sc(12);
 
@@ -213,17 +215,43 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
     /* ── Line 3: Stats ── */
     if (c.targetAmount && c.targetAmount > 0) {
       const pctTxt = `${pct}%`;
-      ctx.font = `700 ${STAT_F}px Urbanist, Arial`;
+      ctx.font = `800 ${PCT_F}px Urbanist, Arial`;
+      const pctW   = ctx.measureText(pctTxt).width;
+      const pPX    = sc(10);
+      const pPY    = sc(4);
+      const pPillW = pctW + pPX * 2;
+      const pPillH = PCT_F + pPY * 2;
+      const pPillX = IL;
+      const pPillY = ry + r3 - PCT_F * 0.82 - pPY;
+      // pill background
+      ctx.fillStyle = ac + "30";
+      rrect(ctx, pPillX, pPillY, pPillW, pPillH, sc(6)); ctx.fill();
+      // pill border
+      ctx.strokeStyle = ac + "60"; ctx.lineWidth = 1.5;
+      rrect(ctx, pPillX, pPillY, pPillW, pPillH, sc(6)); ctx.stroke();
+      // percentage text
       ctx.fillStyle = ac;
       ctx.textAlign = "left"; ctx.direction = "ltr";
-      ctx.fillText(pctTxt, IL, ry + r3);
+      ctx.fillText(pctTxt, pPillX + pPX, ry + r3);
 
-      const amtTxt = `${(c.raisedAmount ?? 0).toLocaleString("en")} / ${c.targetAmount.toLocaleString("en")} ج`;
-      ctx.font = `400 ${STAT_F}px Urbanist, Arial`;
-      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      // Draw amounts right-to-left in segments: target (white) · sep (dim) · raised (accent)
+      const availAmt = TW - pPillW - sc(14);
+      ctx.font = `700 ${AMT_F}px Urbanist, Arial`;
+      const targetTxt = c.targetAmount.toLocaleString("en") + " ج";
+      const targetW   = ctx.measureText(targetTxt).width;
+      ctx.fillStyle = "rgba(255,255,255,0.75)";
       ctx.textAlign = "right"; ctx.direction = "ltr";
-      const pw = ctx.measureText(pctTxt).width + sc(14);
-      ctx.fillText(fit(ctx, amtTxt, TW - pw), IR, ry + r3);
+      ctx.fillText(targetTxt, IR, ry + r3);
+
+      const sepTxt = "  /  ";
+      const sepW   = ctx.measureText(sepTxt).width;
+      ctx.fillStyle = "rgba(255,255,255,0.28)";
+      ctx.fillText(sepTxt, IR - targetW, ry + r3);
+
+      ctx.font = `800 ${AMT_F}px Urbanist, Arial`;
+      ctx.fillStyle = ac;
+      const raisedTxt = (c.raisedAmount ?? 0).toLocaleString("en");
+      ctx.fillText(fit(ctx, raisedTxt, availAmt - sepW - targetW), IR - targetW - sepW, ry + r3);
     } else {
       ctx.font = `400 ${STAT_F}px Cairo, Arial`;
       ctx.fillStyle = "rgba(255,255,255,0.22)";
@@ -245,7 +273,7 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   ctx.textAlign = "center"; ctx.direction = "ltr";
   ctx.font = `400 ${LABEL_F}px Cairo, Arial`;
   ctx.fillStyle = "rgba(255,255,255,0.35)";
-  ctx.fillText("واتساب  ·  إنستاباي : محفظة / حساب", W / 2, FT_INNER + LABEL_F);
+  ctx.fillText("إنستاباي : محفظة / حساب", W / 2, FT_INNER + LABEL_F);
   ctx.font = `800 ${sc(32)}px Urbanist, Arial`;
   ctx.fillStyle = "#C9A84C";
   ctx.fillText("+201039091390", W / 2, FT_INNER + LABEL_F + sc(10) + sc(32));

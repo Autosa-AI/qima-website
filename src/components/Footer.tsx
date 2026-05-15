@@ -108,7 +108,6 @@ export default function Footer() {
           <div className="flex items-center gap-3">
             <span className="text-gold/30">قيمة</span>
             <span className="text-white/10">·</span>
-            <span>{isRTL ? "خيرية مصرية مرخصة" : "Licensed Egyptian Charity"}</span>
           </div>
         </div>
       </div>

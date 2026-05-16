@@ -113,35 +113,46 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
   for (const d of [-sc(8), sc(8)]) { ctx.beginPath(); ctx.arc(W / 2 + d, Y, 2.8, 0, Math.PI * 2); ctx.fill(); }
   Y += sc(36);
 
-  /* ── Cases — minimal row layout (no boxes) ───────────────────────────── */
+  /* ── Cases — dynamic row layout ─────────────────────────────────────── */
   const ACC_W   = sc(3);
   const ACC_GAP = sc(18);
-  const IL      = PAGE_PAD + ACC_W + ACC_GAP;      // left text edge
-  const IR      = W - PAGE_PAD;                    // right text edge
+  const IL      = PAGE_PAD + ACC_W + ACC_GAP;
+  const IR      = W - PAGE_PAD;
   const TW      = IR - IL;
 
-  const NUM_F   = sc(16);
-  const NAME_F  = sc(24);
-  const BRIEF_F = sc(15);
-  const STAT_F  = sc(13);
-  const PCT_F   = sc(24);
-  const AMT_F   = sc(16);
-  const BAR_H   = sc(5);
+  const FT_H   = sc(130);
+  const FT_TOP = H - FT_H;
 
-  // Row-relative vertical positions
-  const PT      = sc(18);                           // padding top
-  const r1      = PT + NAME_F;                      // name + number baseline
-  const r2      = r1 + sc(8) + BRIEF_F;             // brief baseline
-  const barTop  = r2 + sc(12);                      // bar top edge
-  const r3      = barTop + BAR_H + sc(8) + PCT_F;   // stats baseline
-  const ROW_H   = r3 + sc(18);                      // total row height
-  const ROW_GAP = sc(12);
-
-  // Vertically center the cases block in the available space
-  const FT_H      = sc(130);
-  const FT_TOP    = H - FT_H;
-  const blockH    = cases.length * ROW_H + (cases.length - 1) * ROW_GAP;
+  // How much vertical space is left for the cases block
   const available = FT_TOP - sc(20) - Y;
+
+  // Base row height at rowScale=1: PT(18)+NAME_F(24)+gap(8)+BRIEF_F(15)+gap(12)+BAR_H(5)+gap(8)+PCT_F(24)+bottom(18) = 132
+  const baseRowH   = sc(132);
+  const baseRowGap = sc(12);
+  const n          = cases.length;
+  const rowScale   = clamp(
+    (available * 0.92) / (n * baseRowH + Math.max(0, n - 1) * baseRowGap),
+    0.78, 2.2
+  );
+  const rs = (v: number) => Math.round(v * BASE * rowScale);
+
+  const NUM_F   = rs(16);
+  const NAME_F  = rs(24);
+  const BRIEF_F = rs(15);
+  const STAT_F  = rs(13);
+  const PCT_F   = rs(24);
+  const AMT_F   = rs(16);
+  const BAR_H   = rs(5);
+
+  const PT      = rs(18);
+  const r1      = PT + NAME_F;
+  const r2      = r1 + rs(8) + BRIEF_F;
+  const barTop  = r2 + rs(12);
+  const r3      = barTop + BAR_H + rs(8) + PCT_F;
+  const ROW_H   = r3 + rs(18);
+  const ROW_GAP = rs(12);
+
+  const blockH = n * ROW_H + (n - 1) * ROW_GAP;
   Y += Math.max(0, Math.round((available - blockH) / 2));
 
   for (let i = 0; i < cases.length; i++) {
@@ -149,50 +160,43 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
     const ac = ACCENTS[i % ACCENTS.length];
     const ry = Y + i * (ROW_H + ROW_GAP);
 
-    // Thin separator between rows
     if (i > 0) {
       ctx.strokeStyle = "rgba(255,255,255,0.06)"; ctx.lineWidth = 1;
       ctx.beginPath(); ctx.moveTo(IL, ry); ctx.lineTo(IR, ry); ctx.stroke();
     }
 
-    // Accent bar — left edge, spans the content area
     ctx.fillStyle = ac;
     ctx.fillRect(PAGE_PAD, ry + PT, ACC_W, ROW_H - PT * 2);
 
-    /* ── Line 1: #number (left, highlighted pill) · Name (right) ── */
+    /* ── Line 1: #number pill · Name ── */
     ctx.font = `800 ${NUM_F}px Urbanist, Arial`;
     const numTxt = `#${c.number}`;
     const numW   = ctx.measureText(numTxt).width;
-    const pillPX = sc(10);
-    const pillPY = sc(5);
+    const pillPX = rs(10);
+    const pillPY = rs(5);
     const pillW  = numW + pillPX * 2;
     const pillH  = NUM_F + pillPY * 2;
     const pillX  = IL;
     const pillY  = ry + r1 - NUM_F * 0.82 - pillPY;
-    // pill background
     ctx.fillStyle = ac + "28";
-    rrect(ctx, pillX, pillY, pillW, pillH, sc(5)); ctx.fill();
-    // pill border
+    rrect(ctx, pillX, pillY, pillW, pillH, rs(5)); ctx.fill();
     ctx.strokeStyle = ac + "55"; ctx.lineWidth = 1;
-    rrect(ctx, pillX, pillY, pillW, pillH, sc(5)); ctx.stroke();
-    // number text
+    rrect(ctx, pillX, pillY, pillW, pillH, rs(5)); ctx.stroke();
     ctx.fillStyle = ac;
     ctx.textAlign = "left"; ctx.direction = "ltr";
     ctx.fillText(numTxt, pillX + pillPX, ry + r1);
-    let afterNum = pillX + pillW + sc(10);
+    let afterNum = pillX + pillW + rs(10);
 
-    // Urgent dot
     if (c.isUrgent) {
       ctx.fillStyle = "#FBB724";
-      ctx.beginPath(); ctx.arc(afterNum + sc(4), ry + r1 - NUM_F * 0.38, sc(4), 0, Math.PI * 2); ctx.fill();
-      afterNum += sc(16);
+      ctx.beginPath(); ctx.arc(afterNum + rs(4), ry + r1 - NUM_F * 0.38, rs(4), 0, Math.PI * 2); ctx.fill();
+      afterNum += rs(16);
     }
 
-    // Name — right-aligned Arabic
     ctx.font = `700 ${NAME_F}px Cairo, Arial`;
     ctx.fillStyle = "#FFFFFF";
     ctx.textAlign = "right"; ctx.direction = "ltr";
-    ctx.fillText(fit(ctx, c.ar.name, TW - (afterNum - IL) - sc(8)), IR, ry + r1);
+    ctx.fillText(fit(ctx, c.ar.name, TW - (afterNum - IL) - rs(8)), IR, ry + r1);
 
     /* ── Line 2: Brief ── */
     ctx.font = `400 ${BRIEF_F}px Cairo, Arial`;
@@ -217,25 +221,21 @@ async function buildCanvas(cases: CaseForImage[], format: "story" | "square"): P
       const pctTxt = `${pct}%`;
       ctx.font = `800 ${PCT_F}px Urbanist, Arial`;
       const pctW   = ctx.measureText(pctTxt).width;
-      const pPX    = sc(10);
-      const pPY    = sc(4);
+      const pPX    = rs(10);
+      const pPY    = rs(4);
       const pPillW = pctW + pPX * 2;
       const pPillH = PCT_F + pPY * 2;
       const pPillX = IL;
       const pPillY = ry + r3 - PCT_F * 0.82 - pPY;
-      // pill background
       ctx.fillStyle = ac + "30";
-      rrect(ctx, pPillX, pPillY, pPillW, pPillH, sc(6)); ctx.fill();
-      // pill border
+      rrect(ctx, pPillX, pPillY, pPillW, pPillH, rs(6)); ctx.fill();
       ctx.strokeStyle = ac + "60"; ctx.lineWidth = 1.5;
-      rrect(ctx, pPillX, pPillY, pPillW, pPillH, sc(6)); ctx.stroke();
-      // percentage text
+      rrect(ctx, pPillX, pPillY, pPillW, pPillH, rs(6)); ctx.stroke();
       ctx.fillStyle = ac;
       ctx.textAlign = "left"; ctx.direction = "ltr";
       ctx.fillText(pctTxt, pPillX + pPX, ry + r3);
 
-      // Draw amounts right-to-left in segments: target (white) · sep (dim) · raised (accent)
-      const availAmt = TW - pPillW - sc(14);
+      const availAmt = TW - pPillW - rs(14);
       ctx.font = `700 ${AMT_F}px Urbanist, Arial`;
       const targetTxt = c.targetAmount.toLocaleString("en") + " ج";
       const targetW   = ctx.measureText(targetTxt).width;

@@ -152,7 +152,7 @@ export default function CasesPage() {
         en: { name: form.enName.trim(), brief: form.enBrief.trim(), story: form.enStory.trim(), need: form.enNeed.trim() },
         isUrgent: form.isUrgent,
         responsibleAdminId: form.responsibleAdminId || null,
-        ...(form.targetAmount !== "" && { targetAmount: Number(form.targetAmount) }),
+        targetAmount: form.targetAmount !== "" ? Number(form.targetAmount) : 0,
         ...(form.raisedAmount !== "" && { raisedAmount: Number(form.raisedAmount) }),
         beneficiary: hasBeneficiary ? {
           ...(form.beneficiaryName.trim()  && { name:          form.beneficiaryName.trim() }),
@@ -340,6 +340,7 @@ export default function CasesPage() {
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Need</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Category</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Responsible</th>
+                <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Progress</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Urgent</th>
                 <th className="text-left px-4 py-3 text-white/40 text-xs font-medium">Status</th>
                 <th className="px-4 py-3" />
@@ -357,6 +358,18 @@ export default function CasesPage() {
                     {c.responsibleAdminName
                       ? <span className="text-[#C9A84C]/80">{c.responsibleAdminName}</span>
                       : <span className="text-white/20">—</span>}
+                  </td>
+                  <td className="px-4 py-3.5 text-xs">
+                    {c.targetAmount && c.targetAmount > 0 ? (
+                      <div className="flex items-center gap-1.5 min-w-[80px]">
+                        <div className="w-14 h-1.5 bg-white/10 rounded-full overflow-hidden flex-shrink-0">
+                          <div className="h-full bg-[#C9A84C] rounded-full" style={{ width: `${Math.min(100, Math.round(((c.raisedAmount ?? 0) / c.targetAmount) * 100))}%` }} />
+                        </div>
+                        <span className="text-[#C9A84C]/80 tabular-nums">{Math.min(100, Math.round(((c.raisedAmount ?? 0) / c.targetAmount) * 100))}%</span>
+                      </div>
+                    ) : (
+                      <span className="text-white/15">—</span>
+                    )}
                   </td>
                   <td className="px-4 py-3.5">
                     <button

@@ -46,6 +46,7 @@ export default function Donate() {
   const [selectedAmount, setSelectedAmount] = useState("200");
   const [customVal,      setCustomVal]      = useState("");
   const [totalCases,     setTotalCases]     = useState(0);
+  const [vodafoneCopied, setVodafoneCopied] = useState(false);
 
   useEffect(() => {
     fetch("/api/categories")
@@ -186,14 +187,72 @@ export default function Donate() {
                 )}
               </AnimatePresence>
 
-              {/* ③ WhatsApp CTA */}
-              <a href={buildUrl()} target="_blank" rel="noopener noreferrer"
-                onClick={() => trackEvent("donate_intent", { amount: selectedAmount, categoryId: activeCat })}
-                className="group relative flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-gold text-black font-bold rounded-2xl overflow-hidden transition-all hover:shadow-[0_0_28px_rgba(201,168,76,0.4)] hover:scale-[1.02] active:scale-[0.98] text-sm mt-1">
-                {WA_ICON}
-                <span className="relative z-10">{t("donate_cta")}</span>
-                <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
-              </a>
+              {/* ③ CTA buttons */}
+              <div className="space-y-2 mt-1">
+                {/* WhatsApp — primary */}
+                <a href={buildUrl()} target="_blank" rel="noopener noreferrer"
+                  onClick={() => trackEvent("donate_intent", { amount: selectedAmount, categoryId: activeCat })}
+                  className={`group relative flex items-center justify-center gap-2.5 w-full px-6 py-3.5 bg-gold text-black font-bold rounded-2xl overflow-hidden transition-all hover:shadow-[0_0_28px_rgba(201,168,76,0.4)] hover:scale-[1.02] active:scale-[0.98] text-sm ${isRTL ? "flex-row-reverse font-arabic" : ""}`}>
+                  {WA_ICON}
+                  <span className="relative z-10">{t("donate_cta")}</span>
+                  <div className="absolute inset-0 bg-white/20 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                </a>
+
+                {/* InstaPay + Vodafone Cash */}
+                <div className="grid grid-cols-2 gap-2">
+
+                  {/* InstaPay */}
+                  <a
+                    href="https://ipn.eg/S/qima.charity/instapay/61zQnA"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`group relative flex flex-col items-center justify-center gap-1.5 px-3 py-3 rounded-2xl border border-[#6B21A8]/30 bg-[#6B21A8]/[0.07] hover:bg-[#6B21A8]/[0.14] hover:border-[#6B21A8]/50 transition-all duration-200 overflow-hidden ${isRTL ? "font-arabic" : ""}`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <img src="/logos/instapay.svg" alt="InstaPay" className="w-6 h-6 flex-shrink-0" />
+                      <span className="text-[#A855F7] font-bold text-xs tracking-wide">InstaPay</span>
+                    </div>
+                    <span className="text-white/40 text-[10px] leading-tight text-center">
+                      {isRTL ? "ادفع مباشرة" : "Pay directly"}
+                    </span>
+                    <div className="absolute inset-0 bg-[#6B21A8]/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                  </a>
+
+                  {/* Vodafone Cash */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      navigator.clipboard.writeText("01039091390").then(() => {
+                        setVodafoneCopied(true);
+                        setTimeout(() => setVodafoneCopied(false), 2500);
+                      });
+                    }}
+                    className={`group relative flex flex-col items-center justify-center gap-1.5 px-3 py-3 rounded-2xl border transition-all duration-200 overflow-hidden ${
+                      vodafoneCopied
+                        ? "border-emerald-500/40 bg-emerald-500/[0.08]"
+                        : "border-red-600/30 bg-red-600/[0.07] hover:bg-red-600/[0.14] hover:border-red-600/50"
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <img src="/logos/vodafone-cash.svg" alt="Vodafone Cash" className="w-6 h-6 flex-shrink-0" />
+                      <span className={`font-bold text-xs tracking-wide ${vodafoneCopied ? "text-emerald-400" : "text-red-400"}`}>
+                        {vodafoneCopied
+                          ? (isRTL ? "✓ تم النسخ" : "✓ Copied!")
+                          : "Vodafone Cash"}
+                      </span>
+                    </div>
+                    <span className="text-white/40 text-[10px] leading-tight text-center">
+                      {vodafoneCopied
+                        ? "01039091390"
+                        : (isRTL ? "انسخ الرقم" : "Tap to copy number")}
+                    </span>
+                    {!vodafoneCopied && (
+                      <div className="absolute inset-0 bg-red-600/10 translate-y-full group-hover:translate-y-0 transition-transform duration-300" />
+                    )}
+                  </button>
+
+                </div>
+              </div>
 
               <div className={`flex items-center justify-center gap-1.5 mt-3 text-white/20 text-xs ${isRTL ? "flex-row-reverse" : ""}`}>
                 <Shield size={10} />

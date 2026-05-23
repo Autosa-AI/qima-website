@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Purple hexagon background -->
+  <path d="M50 4L94 28v44L50 96 6 72V28L50 4z" fill="#5B21B6"/>
+  <path d="M50 10L88 31v38L50 90 12 69V31L50 10z" fill="#6D28D9"/>
+  <!-- White lightning bolt -->
+  <path d="M57 14L36 52h17L40 86 64 46H47z" fill="white"/>
+</svg>

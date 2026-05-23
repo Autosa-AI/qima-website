@@ -124,7 +124,7 @@ export async function PUT(
 
     if (typeof isActive     === "boolean") updates.isActive     = isActive;
     if (typeof isUrgent     === "boolean") updates.isUrgent     = isUrgent;
-    if (typeof targetAmount === "number" && targetAmount >= 0)  updates.targetAmount = targetAmount;
+    if (typeof targetAmount === "number"  && targetAmount >= 0) updates.targetAmount = targetAmount;
     if (typeof raisedAmount === "number" && raisedAmount >= 0) {
       updates.raisedAmount = raisedAmount;
       await recordDonationDelta(db, existing, raisedAmount, payload);

@@ -11,10 +11,12 @@ interface ApiCategory {
   cases: { number: string }[];
 }
 
-const CAT_META: Record<string, { icon: React.ReactNode; accent: string }> = {
-  monthly: { icon: <CalendarDays  size={16} />, accent: "#4F8EF7" },
-  gaza:    { icon: <HeartHandshake size={16} />, accent: "#34D399" },
-  orphans: { icon: <Users          size={16} />, accent: "#A78BFA" },
+const ACCENT = ["#4F8EF7", "#C9A84C", "#34D399", "#A78BFA", "#F97316", "#EC4899"];
+
+const CAT_META: Record<string, { icon: React.ReactNode }> = {
+  monthly: { icon: <CalendarDays   size={16} /> },
+  gaza:    { icon: <HeartHandshake size={16} /> },
+  orphans: { icon: <Users          size={16} /> },
 };
 
 const AMOUNTS = [
@@ -61,7 +63,8 @@ export default function Donate() {
   }, []);
 
   const cats       = categories.length > 0 ? categories : FALLBACK_CATS;
-  const activeMeta = activeCat ? (CAT_META[activeCat] ?? { icon: null, accent: "#C9A84C" }) : null;
+  const activeCatIdx = cats.findIndex(c => c.slug === activeCat);
+  const activeAccent = activeCatIdx >= 0 ? ACCENT[activeCatIdx % ACCENT.length] : "#C9A84C";
   const activeLabel = activeCat
     ? (cats.find(c => c.slug === activeCat)?.[isRTL ? "ar" : "en"].label ?? "")
     : "";
@@ -111,8 +114,9 @@ export default function Donate() {
                 {isRTL ? "١. اختر تصنيفًا (اختياري)" : "1. Choose a category (optional)"}
               </p>
               <div className={`flex gap-2 flex-wrap mb-5 ${isRTL ? "flex-row-reverse" : ""}`}>
-                {cats.map(cat => {
-                  const meta   = CAT_META[cat.slug];
+                {cats.map((cat, i) => {
+                  const accent = ACCENT[i % ACCENT.length];
+                  const icon   = CAT_META[cat.slug]?.icon ?? null;
                   const active = activeCat === cat.slug;
                   const label  = isRTL ? cat.ar.label : cat.en.label;
                   return (
@@ -124,17 +128,17 @@ export default function Donate() {
                       }}
                       className={`flex items-center gap-2 px-3.5 py-2 rounded-xl text-sm font-medium border transition-all duration-200 ${isRTL ? "flex-row-reverse" : ""}`}
                       style={active ? {
-                        background: `${meta?.accent}18`,
-                        borderColor: `${meta?.accent}50`,
-                        color: meta?.accent,
-                        boxShadow: `0 0 16px ${meta?.accent}20`,
+                        background: `${accent}18`,
+                        borderColor: `${accent}50`,
+                        color: accent,
+                        boxShadow: `0 0 16px ${accent}20`,
                       } : {
                         background: "rgba(255,255,255,0.02)",
                         borderColor: "rgba(255,255,255,0.08)",
                         color: "rgba(255,255,255,0.45)",
                       }}
                     >
-                      <span className={active ? "" : "opacity-50"}>{meta?.icon}</span>
+                      <span className={active ? "" : "opacity-50"}>{icon}</span>
                       <span>{label}</span>
                     </button>
                   );
@@ -147,7 +151,7 @@ export default function Donate() {
                   <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }}
                     exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
                     <div className={`flex items-center gap-2 mb-4 text-xs ${isRTL ? "flex-row-reverse justify-end" : ""}`}
-                      style={{ color: activeMeta?.accent }}>
+                      style={{ color: activeAccent }}>
                       <span className="opacity-60">✓</span>
                       <span>{isRTL ? `التصنيف المختار: ${activeLabel}` : `Selected: ${activeLabel}`}</span>
                     </div>
